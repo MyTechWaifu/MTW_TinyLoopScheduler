@@ -1,0 +1,87 @@
+#######################################
+# Syntax Coloring Map
+# MTW TinyLoopScheduler
+#######################################
+
+#######################################
+# Public types and namespaces
+#######################################
+
+tinyls	KEYWORD1
+Fn	KEYWORD1
+
+#######################################
+# Public scheduler API
+#######################################
+
+init	KEYWORD2
+tick	KEYWORD2
+every	KEYWORD2
+after	KEYWORD2
+post	KEYWORD2
+poll	KEYWORD2
+postISR	KEYWORD2
+removeEvery	KEYWORD2
+removeAfter	KEYWORD2
+removePoll	KEYWORD2
+
+#######################################
+# PARTED public macro API
+#######################################
+
+TLS_PART_START	KEYWORD2
+TLS_STEP	KEYWORD2
+TLS_NEXT	KEYWORD2
+TLS_RESTART	KEYWORD2
+TLS_FINISH	KEYWORD2
+TLS_PART_END	KEYWORD2
+
+#######################################
+# Compile-time feature switches
+#######################################
+
+TLS_PERIODIC	LITERAL1
+TLS_DELAYED	LITERAL1
+TLS_POSTED	LITERAL1
+TLS_POLL	LITERAL1
+TLS_ISR	LITERAL1
+TLS_PARTED	LITERAL1
+TLS_ENABLE	LITERAL1
+TLS_DISABLE	LITERAL1
+TLS_DECL_ONLY	LITERAL1
+
+#######################################
+# Queue profiles and limits
+#######################################
+
+TLS_PROFILE	LITERAL1
+TLS_TINY	LITERAL1
+TLS_MINI	LITERAL1
+TLS_MID	LITERAL1
+TLS_DEF	LITERAL1
+TLS_MAX	LITERAL1
+TLS_MANUAL	LITERAL1
+TLS_MAX_PERIODIC	LITERAL1
+TLS_MAX_DELAYED	LITERAL1
+TLS_MAX_POLL	LITERAL1
+TLS_MAX_POSTED	LITERAL1
+TLS_MAX_ISR_REQUESTS	LITERAL1
+
+#######################################
+# Period and IDLE configuration
+#######################################
+
+TLS_PERIOD	LITERAL1
+TLS_IDLE	LITERAL1
+TLS_AGGRESSIVE	LITERAL1
+TLS_NORMAL	LITERAL1
+TLS_LAZY	LITERAL1
+
+#######################################
+# Public version macros
+#######################################
+
+TLS_VERSION_MAJOR	LITERAL1
+TLS_VERSION_MINOR	LITERAL1
+TLS_VERSION_PATCH	LITERAL1
+TLS_VERSION_STRING	LITERAL1

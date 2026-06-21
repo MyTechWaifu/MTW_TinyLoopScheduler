@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "MTW TinyLoopScheduler"
+type: software
+version: 0.1.0
+date-released: "2026-06-21"
+repository-code: "https://github.com/MyTechWaifu/MTW_TinyLoopScheduler"
+authors:
+  - name: "MyTechWaifu"
+contact:
+  - name: "MyTechWaifu"
+    email: "MyTechWaifu@web3msg.fun"
+license: Apache-2.0
+abstract: >-
+  MTW TinyLoopScheduler is a header-only cooperative scheduler for AVR
+  targets using an Arduino-compatible core. It provides compile-time
+  selectable PERIODIC, DELAYED, POSTED, POLL, ISR-deferred, and optional
+  PARTED task classes with static storage and automatic dynamic IDLE.
+keywords:
+  - Arduino
+  - AVR
+  - embedded systems
+  - cooperative scheduling
+  - static memory
+  - task scheduler
