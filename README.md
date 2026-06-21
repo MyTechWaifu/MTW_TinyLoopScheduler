@@ -1,4 +1,5 @@
 # MTW TinyLoopScheduler
+[![DOI](https://zenodo.org/badge/1275970080.svg)](https://doi.org/10.5281/zenodo.20784799)
 
 A compact cooperative scheduler for AVR targets using an Arduino-compatible core.
 
