@@ -5,6 +5,7 @@ type: software
 version: 0.1.0
 date-released: "2026-06-21"
 repository-code: "https://github.com/MyTechWaifu/MTW_TinyLoopScheduler"
+doi: "10.5281/zenodo.20784800"
 authors:
   - name: "MyTechWaifu"
 contact:
