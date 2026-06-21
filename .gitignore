@@ -1,0 +1,29 @@
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Arduino and C/C++ build artifacts
+build/
+.build/
+*.o
+*.a
+*.d
+*.elf
+*.hex
+*.eep
+*.map
+compile_commands.json
+
+# Temporary and local files
+*.log
+*.tmp
+*.bak
+*.zip
