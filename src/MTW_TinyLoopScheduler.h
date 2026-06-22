@@ -130,8 +130,8 @@
 
 #define TLS_VERSION_MAJOR 0
 #define TLS_VERSION_MINOR 1
-#define TLS_VERSION_PATCH 0
-#define TLS_VERSION_STRING "0.1.0"
+#define TLS_VERSION_PATCH 1
+#define TLS_VERSION_STRING "0.1.1"
 
 /*
  --------------------------------------------------------------------------
@@ -1674,13 +1674,14 @@ void tick(void)
         */
         for (uint8_t i = 1u; i < kernel::periodic_count; ++i) {
             uint8_t key = kernel::periodic_order[i];
+            uint32_t key_deadline = kernel::periodic[key].deadline_ms;
             uint8_t j = i;
 
             while (j > 0u) {
                 uint8_t prev = kernel::periodic_order[(uint8_t)(j - 1u)];
 
-                if ((int32_t)(kernel::periodic[key].deadline_ms -
-                              kernel::periodic[prev].deadline_ms) >= 0) {
+                if ((int32_t)(key_deadline -
+                      kernel::periodic[prev].deadline_ms) >= 0) {
                     break;
                 }
 
@@ -1812,15 +1813,17 @@ void tick(void)
          After compaction, delayed_order[] was rebuilt above because physical
          record indices changed.
         */
+     
         for (uint8_t i = 1u; i < kernel::delayed_count; ++i) {
             uint8_t key = kernel::delayed_order[i];
+            uint32_t key_deadline = kernel::delayed[key].deadline_ms;
             uint8_t j = i;
 
             while (j > 0u) {
                 uint8_t prev = kernel::delayed_order[(uint8_t)(j - 1u)];
 
-                if ((int32_t)(kernel::delayed[key].deadline_ms -
-                              kernel::delayed[prev].deadline_ms) >= 0) {
+                if ((int32_t)(key_deadline -
+                      kernel::delayed[prev].deadline_ms) >= 0) {
                     break;
                 }
 
