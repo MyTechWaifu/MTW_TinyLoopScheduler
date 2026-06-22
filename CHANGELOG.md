@@ -4,6 +4,19 @@ All notable changes to MTW TinyLoopScheduler are documented in this file.
 
 The project follows Semantic Versioning.
 
+## [0.1.1] - 2026-06-22
+
+### Performance
+
+* Optimized PERIODIC insertion sorting by caching the current key deadline before the inner sorting loop.
+* Optimized DELAYED insertion sorting using the same technique.
+
+### Compatibility
+
+* No public API changes.
+* No scheduler behavior or queue-ordering changes.
+* Fully compatible with applications written for v0.1.0.
+
 ## [0.1.0] - 2026-06-21
 
 ### Added
