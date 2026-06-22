@@ -16,7 +16,7 @@ The library is header-only, uses static compile-time storage, does not allocate 
 Current version:
 
 ```text
-0.1.0
+0.1.1
 ```
 
 Current target support:
