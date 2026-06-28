@@ -27,6 +27,22 @@ AVR only
 
 Non-AVR targets are rejected at compile time.
 
+## Hardware support
+
+MTW TinyLoopScheduler is intended to work across the 8-bit AVR ecosystem. The table below lists the AVR families covered by hardware testing and the representative microcontrollers used for verification.
+
+| AVR series / family              | Hardware-tested MCU | Example boards and devices                   |
+| -------------------------------- | ------------------- | -------------------------------------------- |
+| tinyAVR / ATtiny family          | **ATtiny85**        | Digispark, Trinket, GEMMA                    |
+| classic megaAVR / ATmega family  | **ATmega328P**      | Uno, Nano, Pro Mini                          |
+| classic megaAVR / ATmega family  | **ATmega32U4**      | Leonardo, Micro, Pro Micro                   |
+| classic megaAVR / ATmega family  | **ATmega2560**      | Mega 2560, Mega ADK, Mega 1280               |
+| megaAVR 0-series / ATmega family | **ATmega4808**      | ATmega4808 boards, Nano Every, Uno WiFi Rev2 |
+
+The microcontrollers listed in the Hardware-tested MCU column are confirmed working on physical hardware.
+
+Other microcontrollers and boards from the same AVR families are expected to work, provided that they are supported by a compatible Arduino core and have sufficient Flash and SRAM.
+
 ## Main features
 
 - cooperative callback scheduling;
