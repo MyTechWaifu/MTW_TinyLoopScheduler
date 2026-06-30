@@ -31,13 +31,13 @@ Non-AVR targets are rejected at compile time.
 
 MTW TinyLoopScheduler is intended to work across the 8-bit AVR ecosystem. The table below lists the AVR families covered by hardware testing and the representative microcontrollers used for verification.
 
-| AVR series / family              | Hardware-tested MCU | Example boards and devices                   |
-| -------------------------------- | ------------------- | -------------------------------------------- |
-| tinyAVR / ATtiny family          | **ATtiny85**        | Digispark, Trinket, GEMMA                    |
-| classic megaAVR / ATmega family  | **ATmega328P**      | Uno, Nano, Pro Mini                          |
-| classic megaAVR / ATmega family  | **ATmega32U4**      | Leonardo, Micro, Pro Micro                   |
-| classic megaAVR / ATmega family  | **ATmega2560**      | Mega 2560, Mega ADK, Mega 1280               |
-| megaAVR 0-series / ATmega family | **ATmega4808**      | ATmega4808 boards, Nano Every, Uno WiFi Rev2 |
+| AVR series / family              | Hardware-tested MCU    | Example boards and devices                   |
+| -------------------------------- | ---------------------- | -------------------------------------------- |
+| tinyAVR / ATtiny family          | **ATtiny85, ATtiny88** | Digispark, Trinket, GEMMA, MH-Tiny ATtiny88  |
+| classic megaAVR / ATmega family  | **ATmega328P**         | Uno, Nano, Pro Mini                          |
+| classic megaAVR / ATmega family  | **ATmega32U4**         | Leonardo, Micro, Pro Micro                   |
+| classic megaAVR / ATmega family  | **ATmega2560**         | Mega 2560, Mega ADK, Mega 1280               |
+| megaAVR 0-series / ATmega family | **ATmega4808**         | ATmega4808 boards, Nano Every, Uno WiFi Rev2 |
 
 The microcontrollers listed in the Hardware-tested MCU column are confirmed working on physical hardware.
 
