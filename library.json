@@ -1,0 +1,65 @@
+{
+  "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
+  "name": "mtw-tinyloopscheduler",
+  "version": "0.1.2",
+  "description": "A compact header-only cooperative scheduler for AVR Arduino-compatible boards with static memory, compile-time queue profiles, ISR deferral, polling, posted callbacks, delayed callbacks, periodic callbacks, PARTED execution, and optional idle sleep.",
+  "keywords": [
+    "arduino",
+    "avr",
+    "atmelavr",
+    "megaavr",
+    "scheduler",
+    "cooperative",
+    "timer",
+    "millis",
+    "tasks",
+    "static-memory",
+    "no-heap",
+    "attiny",
+    "atmega",
+    "embedded"
+  ],
+  "homepage": "https://github.com/MyTechWaifu/MTW_TinyLoopScheduler",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git"
+  },
+  "authors": [
+    {
+      "name": "MyTechWaifu",
+      "url": "https://github.com/MyTechWaifu",
+      "maintainer": true
+    }
+  ],
+  "license": "Apache-2.0",
+  "frameworks": [
+    "arduino"
+  ],
+  "platforms": [
+    "atmelavr",
+    "atmelmegaavr"
+  ],
+  "headers": [
+    "MTW_TinyLoopScheduler.h"
+  ],
+  "export": {
+    "include": [
+      "src/*",
+      "examples/*",
+      "README.md",
+      "CHANGELOG.md",
+      "LICENSE",
+      "NOTICE",
+      "CITATION.cff",
+      "keywords.txt",
+      "library.properties",
+      "library.json"
+    ],
+    "exclude": [
+      ".gitignore",
+      ".gitattributes",
+      ".github/*",
+      "docs/*"
+    ]
+  }
+}
