@@ -16,7 +16,7 @@ The library is header-only, uses static compile-time storage, does not allocate 
 Current version:
 
 ```text
-0.1.1
+0.1.2
 ```
 
 Current target support:
@@ -42,6 +42,15 @@ MTW TinyLoopScheduler is intended to work across the 8-bit AVR ecosystem. The ta
 The microcontrollers listed in the Hardware-tested MCU column are confirmed working on physical hardware.
 
 Other microcontrollers and boards from the same AVR families are expected to work, provided that they are supported by a compatible Arduino core and have sufficient Flash and SRAM.
+
+PlatformIO package metadata:
+
+| Field | Value |
+|---|---|
+| PlatformIO platforms | `atmelavr`, `atmelmegaavr` |
+| Arduino architectures | `avr`, `megaavr` |
+
+Actual board availability depends on the installed Arduino core, PlatformIO platform package, and board definition.
 
 ## Main features
 
@@ -72,7 +81,11 @@ MTW TinyLoopScheduler is not:
 
 ## Installation
 
-### Arduino Library Manager
+MTW TinyLoopScheduler can be installed through Arduino IDE or PlatformIO.
+
+### Arduino IDE
+
+#### Arduino Library Manager
 
 After publication in Arduino Library Manager:
 
@@ -82,7 +95,7 @@ After publication in Arduino Library Manager:
 4. Select the library.
 5. Click **Install**.
 
-### Manual ZIP installation
+#### Manual ZIP installation
 
 1. Download the repository as a ZIP archive.
 2. Open Arduino IDE.
@@ -95,7 +108,7 @@ Include the library with:
 #include <MTW_TinyLoopScheduler.h>
 ```
 
-## Minimal example
+#### Minimal example
 
 ```cpp
 #include <MTW_TinyLoopScheduler.h>
@@ -153,6 +166,85 @@ void loop()
 ```
 
 This example registers one PERIODIC callback. The callback changes the built-in LED state once every 1000 milliseconds.
+
+### PlatformIO
+
+MTW TinyLoopScheduler can be used in PlatformIO directly from GitHub.
+
+Add the library to `platformio.ini`:
+
+```ini
+[env:uno]
+platform = atmelavr
+board = uno
+framework = arduino
+
+lib_deps =
+    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git
+```
+
+#### Minimal example
+Minimal `src/main.cpp`:
+
+```cpp
+#include <Arduino.h>
+#include <MTW_TinyLoopScheduler.h>
+
+static void turnLedOff()
+{
+    digitalWrite(LED_BUILTIN, LOW);
+}
+
+static void turnLedOn()
+{
+    digitalWrite(LED_BUILTIN, HIGH);
+    tinyls::after(turnLedOff, 1000u);
+}
+
+void setup()
+{
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
+    tinyls::init();
+    tinyls::every(turnLedOn, 2000u);
+    turnLedOn();
+}
+
+void loop()
+{
+    tinyls::tick();
+}
+```
+
+Build the project:
+
+```bash
+pio run
+```
+
+Upload to the board:
+
+```bash
+pio run -t upload
+```
+
+To pin a fixed release version, use a Git tag:
+
+```ini
+lib_deps =
+    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git
+```
+
+The library declares PlatformIO compatibility with:
+
+| PlatformIO platform | Arduino architecture | Target class |
+|---|---|---|
+| `atmelavr` | `avr` | classic 8-bit AVR, ATtiny, ATmega |
+| `atmelmegaavr` | `megaavr` | megaAVR 0-series, ATmega4808, ATmega4809 |
+
+Actual board availability depends on the installed Arduino core, PlatformIO platform package, and board definition.
+
+
 
 ## Callback type
 
