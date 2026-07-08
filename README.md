@@ -169,7 +169,13 @@ This example registers one PERIODIC callback. The callback changes the built-in 
 
 ### PlatformIO
 
-MTW TinyLoopScheduler can be used in PlatformIO directly from GitHub.
+MTW TinyLoopScheduler can be installed in PlatformIO through the PlatformIO Registry or directly from GitHub.
+
+PlatformIO Registry page:
+
+https://registry.platformio.org/libraries/techiewaifu/mtw-tinyloopscheduler
+
+#### Install from PlatformIO Registry
 
 Add the library to `platformio.ini`:
 
@@ -180,7 +186,21 @@ board = uno
 framework = arduino
 
 lib_deps =
-    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git
+    techiewaifu/mtw-tinyloopscheduler@^0.1.2
+```
+
+#### Install from GitHub
+
+Use the GitHub repository directly:
+
+```ini
+[env:uno]
+platform = atmelavr
+board = uno
+framework = arduino
+
+lib_deps =
+    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#v0.1.2
 ```
 
 #### Minimal example
