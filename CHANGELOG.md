@@ -4,6 +4,24 @@ All notable changes to MTW TinyLoopScheduler are documented in this file.
 
 The project follows Semantic Versioning.
 
+## [0.1.2] - 2026-07-08
+
+### Added
+
+- Added `library.json` manifest for PlatformIO package metadata.
+- Declared PlatformIO platform compatibility with `atmelavr` and `atmelmegaavr`.
+
+### Changed
+
+- Updated Arduino library metadata to include both `avr` and `megaavr` architectures.
+- Added PlatformIO installation instructions through GitHub.
+
+### Compatibility
+
+- No public API changes.
+- No scheduler behavior changes.
+- No source compatibility breaks for sketches written for `0.1.0` or `0.1.1`.
+
 ## [0.1.1] - 2026-06-22
 
 ### Performance
