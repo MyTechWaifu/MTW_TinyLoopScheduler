@@ -34,6 +34,8 @@
    - TLS_ISR controls postISR();
    - TLS_PARTED controls the PARTED macro API and its per-POLL-slot step
      state; PARTED requires TLS_POLL.
+   - TLS_SLEEP_GUARD controls whether SLEEP_MODE_IDLE is reaffirmed before
+     every actual sleep entry.
 
  PERIODIC, DELAYED, POSTED, POLL, and ISR are enabled by default. Disabling
  one of these ordinary subsystems removes its public declarations, runtime
@@ -99,8 +101,8 @@
    - every additional real .cpp translation unit that includes this header
      must define TLS_DECL_ONLY before the include;
    - all translation units must use matching TLS_PERIODIC, TLS_DELAYED,
-     TLS_POSTED, TLS_POLL, TLS_ISR, and TLS_PARTED values so declarations and
-     available symbols remain consistent;
+     TLS_POSTED, TLS_POLL, TLS_ISR, TLS_PARTED, and TLS_SLEEP_GUARD values so
+     declarations and available symbols remain consistent;
    - every translation unit that defines a PARTED function must enable
      TLS_PARTED, and the implementation-owning translation unit must also
      enable it so the shared PARTED state is allocated.
@@ -189,6 +191,10 @@
 #define TLS_PARTED TLS_DISABLE
 #endif
 
+#ifndef TLS_SLEEP_GUARD
+#define TLS_SLEEP_GUARD TLS_ENABLE
+#endif
+
 #if TLS_PERIODIC != TLS_ENABLE && TLS_PERIODIC != TLS_DISABLE
 #warning "MTW TinyLoopScheduler: invalid TLS_PERIODIC value; clamped to TLS_ENABLE"
 #undef TLS_PERIODIC
@@ -223,6 +229,12 @@
 #warning "MTW TinyLoopScheduler: invalid TLS_PARTED value; clamped to TLS_DISABLE"
 #undef TLS_PARTED
 #define TLS_PARTED TLS_DISABLE
+#endif
+
+#if TLS_SLEEP_GUARD != TLS_ENABLE && TLS_SLEEP_GUARD != TLS_DISABLE
+#warning "MTW TinyLoopScheduler: invalid TLS_SLEEP_GUARD value; clamped to TLS_ENABLE"
+#undef TLS_SLEEP_GUARD
+#define TLS_SLEEP_GUARD TLS_ENABLE
 #endif
 
 /*
@@ -305,12 +317,13 @@ typedef void (*Fn)(void);
 extern uint32_t now;
 
 /**
- @brief Initialize cached time and logically empty all enabled queues.
+ @brief Initialize cached time, sleep mode, and all enabled queues.
 
  Call init() exactly once from setup(), after hardware initialization and
- before registering initial jobs. Queue counts are reset; old array contents
- need not be erased because they become unreachable. Do not call init() from
- tick(), a callback, a PARTED step, or an ISR.
+ before registering initial jobs. SLEEP_MODE_IDLE is selected in every
+ TLS_SLEEP_GUARD configuration. Queue counts are reset; old array contents need
+ not be erased because they become unreachable. Do not call init() from tick(),
+ a callback, a PARTED step, or an ISR.
 */
 void init(void);
 
@@ -1241,6 +1254,23 @@ extern uint8_t poll_part[];
  The 16-bit interval is a lightweight heuristic and wraps modulo 65,536 ms.
  This wrap does not affect scheduler deadlines, which remain 32-bit, but the
  load gate is not meaningful for gaps of 65.536 seconds or longer.
+ 
+ TLS_SLEEP_GUARD controls how the fixed SLEEP_MODE_IDLE selection is
+ maintained. init() selects SLEEP_MODE_IDLE in both configurations.
+
+   #define TLS_SLEEP_GUARD TLS_ENABLE
+
+     Safe default. Before every actual sleep entry, tick() selects
+     SLEEP_MODE_IDLE again. This protects the scheduler if application code or
+     another library changed the MCU sleep-mode selection after init().
+
+   #define TLS_SLEEP_GUARD TLS_DISABLE
+
+     Optimized policy. SLEEP_MODE_IDLE is selected only by init(); tick() does
+     not repeat the mode-selection write before sleeping. After init(), the
+     application and third-party libraries must not change the MCU sleep mode.
+     sleep_enable(), sleep_cpu(), and sleep_disable() still run for every
+     actual sleep entry in both configurations. 
 */
 
 #define TLS_AGGRESSIVE 1
@@ -1526,6 +1556,13 @@ void init(void)
      short.
     */
     uint32_t initial_now = (uint32_t)millis();
+
+    /*
+     Select the scheduler sleep mode in both guard configurations.
+     With TLS_SLEEP_GUARD disabled, this is the only mode-selection write.
+    */
+    set_sleep_mode(SLEEP_MODE_IDLE);
+ 
     uint8_t state = kernel::enterCritical();
 
     now = initial_now;
@@ -1591,6 +1628,13 @@ void tick(void)
      next tick(), which is equivalent to a request arriving after this phase.
     */
     if (kernel::isr_request_count > 0u) {
+        /*
+            At least one deferred ISR callback will be executed, so
+            this pass must not enter IDLE before POSTED and POLL.
+        */
+
+        kernel::state_mask |= kernel::STATE_SKIP_ISR;
+     
         while (1) {
             Fn fn;
             uint8_t state = kernel::enterCritical();
@@ -1609,12 +1653,6 @@ void tick(void)
             fn = kernel::isr_requests[kernel::isr_request_count];
 
             kernel::exitCritical(state);
-
-            /*
-             At least one deferred ISR callback was executed in this pass, so
-             this pass must not enter IDLE before POSTED and POLL.
-            */
-            kernel::state_mask |= kernel::STATE_SKIP_ISR;
 
             fn();
         }
@@ -1907,7 +1945,13 @@ void tick(void)
      wakes it.
     */
     if ((kernel::state_mask & kernel::STATE_IDLE_MASK) == 0u) {
+#if TLS_SLEEP_GUARD == TLS_ENABLE
+        /*
+         Reaffirm IDLE immediately before sleep in case external code changed
+         the global MCU sleep-mode selection after init().
+        */
         set_sleep_mode(SLEEP_MODE_IDLE);
+#endif
         sleep_enable();
         sleep_cpu();
         sleep_disable();
