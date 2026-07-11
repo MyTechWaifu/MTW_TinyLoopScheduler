@@ -187,7 +187,7 @@ board = uno
 framework = arduino
 
 lib_deps =
-    techiewaifu/mtw-tinyloopscheduler@^0.1.3
+    techiewaifu/mtw-tinyloopscheduler
 ```
 
 #### Install from GitHub
@@ -201,7 +201,7 @@ board = uno
 framework = arduino
 
 lib_deps =
-    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#v0.1.3
+    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git
 ```
 
 #### Minimal example
