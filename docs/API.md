@@ -1,6 +1,6 @@
 # MTW TinyLoopScheduler API
 
-This document describes the public API of MTW TinyLoopScheduler version `0.1.0`.
+This document describes the public API of MTW TinyLoopScheduler version `0.1.3`.
 
 The library is a header-only cooperative scheduler for AVR targets using an Arduino-compatible core.
 
@@ -629,6 +629,7 @@ TLS_POSTED
 TLS_POLL
 TLS_ISR
 TLS_PARTED
+TLS_SLEEP_GUARD
 ```
 
 Every translation unit that defines a PARTED callback must enable PARTED.
