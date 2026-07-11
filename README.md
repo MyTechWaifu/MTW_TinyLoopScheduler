@@ -50,7 +50,21 @@ PlatformIO package metadata:
 | PlatformIO platforms | `atmelavr`, `atmelmegaavr` |
 | Arduino architectures | `avr`, `megaavr` |
 
-Actual board availability depends on the installed Arduino core, PlatformIO platform package, and board definition.
+Actual board availability depends on the installed Arduino core, PlatformIO
+platform package, and board definition.
+
+#### Ready-to-build PlatformIO examples
+
+Ready-to-build PlatformIO projects are available in:
+
+[`platformio-examples/`](./platformio-examples/)
+
+Each example is an independent PlatformIO project containing:
+
+```text
+platformio.ini
+src/main.cpp
+```
 
 ## Main features
 
