@@ -1,6 +1,6 @@
 # MTW TinyLoopScheduler Configuration
 
-This document describes the compile-time configuration of MTW TinyLoopScheduler version `0.1.0`.
+This document describes the compile-time configuration of MTW TinyLoopScheduler version `0.1.3`.
 
 All configuration macros must be defined before the first inclusion of:
 
@@ -32,6 +32,7 @@ If no configuration macros are defined, the library uses:
 #define TLS_PROFILE  TLS_DEF
 #define TLS_PERIOD   32
 #define TLS_IDLE     TLS_NORMAL
+#define TLS_SLEEP_GUARD TLS_ENABLE
 ```
 
 ## Compile-time task-class control
@@ -398,6 +399,17 @@ TLS_NORMAL
 
 The compiler emits a warning.
 
+## Sleep mode guard
+
+`TLS_SLEEP_GUARD` controls whether TinyLoopScheduler reaffirms
+`SLEEP_MODE_IDLE` immediately before every actual sleep entry.
+
+Default:
+
+```cpp
+#define TLS_SLEEP_GUARD TLS_ENABLE
+```
+
 ## PARTED configuration
 
 Enable PARTED with:
@@ -473,9 +485,10 @@ Exactly one translation unit must own the implementation and scheduler state.
 The implementation-owning translation unit includes the header normally:
 
 ```cpp
-#define TLS_PROFILE  TLS_MINI
-#define TLS_PERIODIC TLS_ENABLE
-#define TLS_DELAYED  TLS_DISABLE
+#define TLS_PROFILE     TLS_MINI
+#define TLS_PERIODIC    TLS_ENABLE
+#define TLS_DELAYED     TLS_DISABLE
+#define TLS_SLEEP_GUARD TLS_ENABLE
 
 #include <MTW_TinyLoopScheduler.h>
 ```
@@ -485,9 +498,10 @@ The implementation-owning translation unit includes the header normally:
 Every additional real `.cpp` translation unit must define `TLS_DECL_ONLY`:
 
 ```cpp
-#define TLS_PROFILE  TLS_MINI
-#define TLS_PERIODIC TLS_ENABLE
-#define TLS_DELAYED  TLS_DISABLE
+#define TLS_PROFILE     TLS_MINI
+#define TLS_PERIODIC    TLS_ENABLE
+#define TLS_DELAYED     TLS_DISABLE
+#define TLS_SLEEP_GUARD TLS_ENABLE
 #define TLS_DECL_ONLY
 
 #include <MTW_TinyLoopScheduler.h>
@@ -502,6 +516,7 @@ TLS_POSTED
 TLS_POLL
 TLS_ISR
 TLS_PARTED
+TLS_SLEEP_GUARD
 ```
 
 Every translation unit that defines a PARTED callback must enable PARTED.
@@ -539,7 +554,12 @@ Use this order at the beginning of the implementation-owning sketch:
 #define TLS_IDLE TLS_NORMAL
 
 /*
-  5. Include the library.
+  5. Select the sleep-mode guard policy.
+*/
+#define TLS_SLEEP_GUARD TLS_ENABLE
+
+/*
+  6. Include the library.
 */
 #include <MTW_TinyLoopScheduler.h>
 ```
