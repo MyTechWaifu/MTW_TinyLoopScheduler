@@ -16,7 +16,7 @@ The library is header-only, uses static compile-time storage, does not allocate 
 Current version:
 
 ```text
-0.1.2
+0.1.3
 ```
 
 Current target support:
@@ -70,6 +70,7 @@ Actual board availability depends on the installed Arduino core, PlatformIO plat
 - selectable 16-bit or 32-bit period storage;
 - cached `millis()` value exposed as `tinyls::now`;
 - automatic AVR `SLEEP_MODE_IDLE` entry when the IDLE gate permits it;
+- optional sleep-mode guard that reaffirms `SLEEP_MODE_IDLE` before sleeping;
 - rollover-safe deadline comparison within the documented interval limits.
 
 MTW TinyLoopScheduler is not:
@@ -186,7 +187,7 @@ board = uno
 framework = arduino
 
 lib_deps =
-    techiewaifu/mtw-tinyloopscheduler@^0.1.2
+    techiewaifu/mtw-tinyloopscheduler@^0.1.3
 ```
 
 #### Install from GitHub
@@ -200,7 +201,7 @@ board = uno
 framework = arduino
 
 lib_deps =
-    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#v0.1.2
+    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#v0.1.3
 ```
 
 #### Minimal example
@@ -252,7 +253,7 @@ To pin a fixed release version, use a Git tag:
 
 ```ini
 lib_deps =
-    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git
+    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#v0.1.3
 ```
 
 The library declares PlatformIO compatibility with:
@@ -328,7 +329,8 @@ All scheduler-dispatched callbacks in one pass see the same cached timestamp in 
 void tinyls::init();
 ```
 
-Initializes cached time and logically empties all enabled queues.
+Initializes cached time, selects AVR `SLEEP_MODE_IDLE`, and logically empties
+all enabled queues.
 
 Call it exactly once from `setup()`, after hardware initialization and before registering initial jobs.
 
@@ -856,6 +858,17 @@ IDLE is skipped for the current pass when:
 POSTED and POLL intentionally do not suppress IDLE. When none of the IDLE skip conditions is present, the MCU enters `SLEEP_MODE_IDLE`; POSTED and POLL execute after a normal interrupt wakes it.
 
 The 16-bit load-gate interval wraps every 65.536 seconds. This affects only the IDLE heuristic, not 32-bit scheduler deadlines.
+
+## Sleep mode guard
+
+`TLS_SLEEP_GUARD` controls whether the scheduler reaffirms
+`SLEEP_MODE_IDLE` immediately before every actual sleep entry.
+
+The default configuration is:
+
+```cpp
+#define TLS_SLEEP_GUARD TLS_ENABLE
+```
 
 ## PARTED execution
 
