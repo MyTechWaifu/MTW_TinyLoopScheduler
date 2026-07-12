@@ -4,6 +4,18 @@ All notable changes to MTW TinyLoopScheduler are documented in this file.
 
 The project follows Semantic Versioning.
 
+## [0.1.4] - 2026-07-12
+
+### Added
+
+- Added PlatformIO examples.
+- Added `platformio.ini` configuration files for the PlatformIO examples.
+
+### Compatibility
+
+- No library runtime behavior changes.
+- No public API changes.
+
 ## [0.1.3] - 2026-07-11
 
 ### Added
