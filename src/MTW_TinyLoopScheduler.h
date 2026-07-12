@@ -132,8 +132,8 @@
 
 #define TLS_VERSION_MAJOR 0
 #define TLS_VERSION_MINOR 1
-#define TLS_VERSION_PATCH 3
-#define TLS_VERSION_STRING "0.1.3"
+#define TLS_VERSION_PATCH 4
+#define TLS_VERSION_STRING "0.1.4"
 
 /*
  --------------------------------------------------------------------------
