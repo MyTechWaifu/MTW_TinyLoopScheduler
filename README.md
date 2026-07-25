@@ -41,6 +41,35 @@ MTW TinyLoopScheduler is intended to work across the 8-bit AVR ecosystem. The ta
 | megaAVR 0-series | **ATmega4808** | ATmega4808 boards, Nano Every, Uno WiFi Rev2 |
 | AVR-compatible / LGT8F family | **LGT8F328P** | Nano LGT8F328P |
 
+
+### Verified clock-frequency compatibility
+
+The following MCU and clock-frequency combinations have been verified on physical hardware.
+
+| Clock frequency | Hardware-tested microcontrollers                                                                                        |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| 16 MHz          | `ATmega328P`, `ATmega328PB`, `ATmega32U4`, `ATmega2560`, `ATmega4808`, `ATmega88PA`, `ATmega8A`, `ATtiny85`, `ATtiny88` |
+| 20 MHz          | `ATmega328P`, `ATmega88PA`                                                                                              |
+| 32 MHz          | `LGT8F328P`                                                                                                                 |
+
+Only the combinations listed above have been explicitly tested. Other clock frequencies may work when supported by the selected microcontroller, clock source, fuse configuration, and Arduino core, but they are not currently included in the verified hardware matrix.
+
+### Verified Arduino core compatibility
+
+The following Arduino core and MCU combinations have been successfully compiled and tested on physical hardware.
+
+| Arduino core / board package | Hardware-tested microcontrollers         |
+| ---------------------------- | ---------------------------------------- |
+| Arduino AVR Boards           | `ATmega328P`, `ATmega32U4`, `ATmega2560` |
+| ATTinyCore                   | `ATtiny85`, `ATtiny88`                   |
+| MiniCore                     | `ATmega328P`, `ATmega88PA`, `ATmega8A`   |
+| Thinary Nano Every           | `ATmega4808`                             |
+| LGT8Fx                       | `LGT8F328P`                                  |
+
+This table describes verified MTW TinyLoopScheduler compatibility, not the complete list of microcontrollers supported by each Arduino core.
+
+
+
 The microcontrollers listed in the Hardware-tested MCU column are confirmed working on physical hardware.
 
 Other microcontrollers and boards from the same AVR families are expected to work, provided that they are supported by a compatible Arduino core and have sufficient Flash and SRAM.
