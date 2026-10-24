@@ -38,7 +38,8 @@ MTW TinyLoopScheduler is intended to work across the 8-bit AVR ecosystem. The ta
 | classic megaAVR | **ATmega328PB** | Nano 328PB |
 | classic megaAVR | **ATmega32U4** | Leonardo, Micro, Pro Micro |
 | classic megaAVR | **ATmega2560** | Mega 2560, Mega ADK, Mega 1280 |
-| megaAVR 0-series | **ATmega4808** | ATmega4808 boards, Nano Every, Uno WiFi Rev2 |
+| megaAVR 0-series | **ATmega4808, ATmega4809** | ATmega4808/4809 boards, Nano Every, Uno WiFi Rev2 |
+| AVR Dx series | **AVR64DD32, AVR32DB32** | AVR Dx boards |
 | AVR-compatible / LGT8F family | **LGT8F328P** | Nano LGT8F328P |
 
 
@@ -48,9 +49,10 @@ The following MCU and clock-frequency combinations have been verified on physica
 
 | Clock frequency | Hardware-tested microcontrollers                                                                                        |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| 16 MHz          | `ATmega328P`, `ATmega328PB`, `ATmega32U4`, `ATmega2560`, `ATmega4808`, `ATmega88PA`, `ATmega8A`, `ATtiny85`, `ATtiny88` |
-| 20 MHz          | `ATmega328P`, `ATmega88PA`                                                                                              |
-| 32 MHz          | `LGT8F328P`                                                                                                                 |
+| 16 MHz          | `ATmega328P`, `ATmega328PB`, `ATmega32U4`, `ATmega2560`, `ATmega4808`, `ATmega4809`, `ATmega88PA`, `ATmega8A`, `ATtiny85`, `ATtiny88`, `AVR64DD32`, `AVR32DB32`|
+| 20 MHz          | `ATmega328P`, `ATmega88PA`, `ATmega4808`, `ATmega4809`, `AVR64DD32`, `AVR32DB32`|
+| 24 MHz          | `AVR64DD32`, `AVR32DB32`|
+| 32 MHz          | `LGT8F328P`|
 
 Only the combinations listed above have been explicitly tested. Other clock frequencies may work when supported by the selected microcontroller, clock source, fuse configuration, and Arduino core, but they are not currently included in the verified hardware matrix.
 
@@ -63,6 +65,8 @@ The following Arduino core and MCU combinations have been successfully compiled 
 | Arduino AVR Boards           | `ATmega328P`, `ATmega32U4`, `ATmega2560` |
 | ATTinyCore                   | `ATtiny85`, `ATtiny88`                   |
 | MiniCore                     | `ATmega328P`, `ATmega88PA`, `ATmega8A`   |
+| MegaCoreX                     | `ATmega4808`, `ATmega4809`   |
+| DxCore                     | `AVR64DD32`, `AVR32DB32`   |
 | Thinary Nano Every           | `ATmega4808`                             |
 | LGT8Fx                       | `LGT8F328P`                                  |
 
