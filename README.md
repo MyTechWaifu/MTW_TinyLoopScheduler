@@ -13,7 +13,7 @@ The library is header-only, uses static compile-time storage, does not allocate 
 
 ## Status
 
-Current version: **0.2.0**.
+Current version: **0.2.1**.
 
 The platform backend is selected automatically from the target selected in
 Arduino IDE or PlatformIO. No platform selector is required in a sketch.
@@ -325,7 +325,7 @@ To pin a fixed release version, use a Git tag:
 
 ```ini
 lib_deps =
-    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#0.2.0
+    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#0.2.1
 ```
 
 The library uses the Arduino framework. The selected board automatically
