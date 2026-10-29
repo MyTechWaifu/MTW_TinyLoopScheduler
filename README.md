@@ -1,7 +1,7 @@
 # MTW TinyLoopScheduler
 [![DOI](https://zenodo.org/badge/1275970080.svg)](https://doi.org/10.5281/zenodo.20784799)
 
-A compact cooperative scheduler for AVR targets using an Arduino-compatible core.
+A compact cooperative scheduler for Arduino-compatible targets, with native AVR support and a portable Generic backend.
 
 MTW TinyLoopScheduler replaces scattered `millis()` checks with named callbacks dispatched from one explicit place:
 
@@ -13,25 +13,35 @@ The library is header-only, uses static compile-time storage, does not allocate 
 
 ## Status
 
-Current version:
+Current version: **0.2.0**.
 
-```text
-0.1.4
-```
+The platform backend is selected automatically from the target selected in
+Arduino IDE or PlatformIO. No platform selector is required in a sketch.
 
-Current target support:
+| Build target | Automatically selected backend | `TLS_USE_IDLE` default | `TLS_ISR` default |
+| --- | --- | --- | --- |
+| AVR, including classic AVR, megaAVR 0-series, and AVR Dx | AVR | `TLS_ENABLE` | `TLS_ENABLE` |
+| Other Arduino-compatible targets | Generic | `TLS_DISABLE` | `TLS_DISABLE` |
 
-```text
-AVR only
-```
+The current selector uses `__AVR__`: AVR targets use the AVR backend; all other
+targets use Generic. STM32, RP2040/RP2350, and Renesas targets currently share
+Generic; dedicated hardware backends have not been added yet.
 
-Non-AVR targets are rejected at compile time.
+Generic provides PERIODIC, DELAYED, POSTED, POLL, and optional PARTED using
+`Arduino.h` and `millis()`. It provides no TLS sleep backend, critical-section
+backend, or `postISR()`. Explicitly enabling unsupported IDLE or ISR support
+produces a compile-time error.
 
-## Hardware support
+`TLS_PROFILE` is separate: it controls queue capacities and is not selected
+automatically from the platform. See [platform details](docs/PLATFORMS.md).
 
-MTW TinyLoopScheduler is intended to work across the 8-bit AVR ecosystem. The table below lists the AVR families covered by hardware testing and the representative microcontrollers used for verification.
+## Hardware and platform support
 
-| AVR series / family | Hardware-tested MCU | Example boards and devices |
+### Verified microcontrollers and boards
+
+MTW TinyLoopScheduler supports AVR and Arduino-compatible 32-bit targets. The table below lists the verified microcontrollers and representative boards.
+
+| MCU family | Hardware-tested MCU | Example boards and devices |
 | -------------------------------- | ------------------------------ | --------------------------------------------- |
 | tinyAVR | **ATtiny85, ATtiny88** | Digispark, Trinket, GEMMA, MH-Tiny ATtiny88 |
 | classic megaAVR | **ATmega328P** | Uno, Nano, Pro Mini |
@@ -41,9 +51,13 @@ MTW TinyLoopScheduler is intended to work across the 8-bit AVR ecosystem. The ta
 | megaAVR 0-series | **ATmega4808, ATmega4809** | ATmega4808/4809 boards, Nano Every, Uno WiFi Rev2 |
 | AVR Dx series | **AVR64DD32, AVR32DB32** | AVR Dx boards |
 | AVR-compatible / LGT8F family | **LGT8F328P** | Nano LGT8F328P |
+| Microchip / Atmel SAM | **SAM3X8E** | Arduino Due |
+| Renesas RA | **RA4M1** | Arduino Uno R4 Minima |
+| Raspberry Pi RP | **RP2040** | Raspberry Pi Pico |
+| Raspberry Pi RP | **RP2350** | Raspberry Pi Pico 2 |
 
 
-### Verified clock-frequency compatibility
+### Verified AVR clock-frequency compatibility
 
 The following MCU and clock-frequency combinations have been verified on physical hardware.
 
@@ -56,7 +70,7 @@ The following MCU and clock-frequency combinations have been verified on physica
 
 Only the combinations listed above have been explicitly tested. Other clock frequencies may work when supported by the selected microcontroller, clock source, fuse configuration, and Arduino core, but they are not currently included in the verified hardware matrix.
 
-### Verified Arduino core compatibility
+### Verified AVR Arduino core compatibility
 
 The following Arduino core and MCU combinations have been successfully compiled and tested on physical hardware.
 
@@ -76,14 +90,30 @@ This table describes verified MTW TinyLoopScheduler compatibility, not the compl
 
 The microcontrollers listed in the Hardware-tested MCU column are confirmed working on physical hardware.
 
-Other microcontrollers and boards from the same AVR families are expected to work, provided that they are supported by a compatible Arduino core and have sufficient Flash and SRAM.
+Other microcontrollers and boards from the listed families are expected to work, provided that they are supported by a compatible Arduino core and have sufficient Flash and SRAM.
+
+### Generic compatibility
+
+Arduino Due, Arduino Uno R4 Minima, RP2040, and RP2350 use the Generic backend.
+It requires a working Arduino-compatible `millis()` source and a single main
+execution context for calls into TLS. Calls from hardware ISRs, another core,
+or concurrent threads are not supported.
+
+Generic provides PERIODIC, DELAYED, POSTED, POLL, and optional PARTED.
+TLS IDLE and `postISR()` are disabled by default and cannot be enabled until
+a hardware backend is implemented. `TLS_ISR` does not disable the Arduino
+core's hardware interrupts.
+
+STM32 targets also use Generic. Compilation and linking have been verified
+for STM32F401RE / Nucleo F401RE.
 
 PlatformIO package metadata:
 
 | Field | Value |
 |---|---|
-| PlatformIO platforms | `atmelavr`, `atmelmegaavr` |
-| Arduino architectures | `avr`, `megaavr` |
+| Framework | Arduino |
+| PlatformIO platforms (`library.json`) | `*` |
+| Arduino architectures (`library.properties`) | `*` |
 
 Actual board availability depends on the installed Arduino core, PlatformIO
 platform package, and board definition.
@@ -108,17 +138,19 @@ src/main.cpp
 - no heap allocation;
 - no dynamic containers;
 - header-only implementation;
+- automatic AVR / Generic platform selection;
 - repeating PERIODIC callbacks;
 - one-shot DELAYED callbacks;
 - one-shot POSTED callbacks;
 - persistent POLL callbacks;
-- deferred callback requests from AVR hardware ISRs;
+- optional deferred callback requests from AVR hardware ISRs;
 - optional step-based PARTED execution;
 - predefined and manual queue-capacity profiles;
 - compile-time removal of unused subsystems;
 - selectable 16-bit or 32-bit period storage;
 - cached `millis()` value exposed as `tinyls::now`;
-- automatic AVR `SLEEP_MODE_IDLE` entry when the IDLE gate permits it;
+- independently switchable AVR IDLE and deferred-ISR support;
+- automatic AVR `SLEEP_MODE_IDLE` entry when IDLE is enabled and its load gate permits it;
 - optional sleep-mode guard that reaffirms `SLEEP_MODE_IDLE` before sleeping;
 - rollover-safe deadline comparison within the documented interval limits.
 
@@ -131,26 +163,17 @@ MTW TinyLoopScheduler is not:
 
 ## Installation
 
-MTW TinyLoopScheduler can be installed through Arduino IDE or PlatformIO.
+MTW TinyLoopScheduler can be installed through Arduino Library Manager or PlatformIO.
 
 ### Arduino IDE
 
 #### Arduino Library Manager
-
-After publication in Arduino Library Manager:
 
 1. Open Arduino IDE.
 2. Open **Sketch → Include Library → Manage Libraries...**
 3. Search for **MTW TinyLoopScheduler**.
 4. Select the library.
 5. Click **Install**.
-
-#### Manual ZIP installation
-
-1. Download the repository as a ZIP archive.
-2. Open Arduino IDE.
-3. Open **Sketch → Include Library → Add .ZIP Library...**
-4. Select the downloaded archive.
 
 Include the library with:
 
@@ -302,19 +325,12 @@ To pin a fixed release version, use a Git tag:
 
 ```ini
 lib_deps =
-    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#v0.1.3
+    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#v0.2.0
 ```
 
-The library declares PlatformIO compatibility with:
-
-| PlatformIO platform | Arduino architecture | Target class |
-|---|---|---|
-| `atmelavr` | `avr` | classic 8-bit AVR, ATtiny, ATmega |
-| `atmelmegaavr` | `megaavr` | megaAVR 0-series, ATmega4808, ATmega4809 |
-
-Actual board availability depends on the installed Arduino core, PlatformIO platform package, and board definition.
-
-
+The library uses the Arduino framework. The selected board automatically
+determines whether the AVR or Generic backend is used. Actual board availability
+depends on the installed Arduino core, PlatformIO platform package, and board definition.
 
 ## Callback type
 
@@ -347,6 +363,7 @@ Execution is cooperative:
 - there is no preemption;
 - only one callback executes at a time;
 - callbacks run inside `tinyls::tick()`;
+- the Arduino `loop()` remains the application entry point; TLS does not replace it;
 - callback duration directly affects scheduler latency;
 - `tick()` is not reentrant;
 - `tick()` must not be called from a callback, PARTED step, ISR, or nested context.
@@ -358,15 +375,19 @@ Long work should be divided into short PARTED steps or another explicit applicat
 One `tinyls::tick()` pass performs the following phases:
 
 1. capture one common `millis()` snapshot;
-2. update the dynamic IDLE load gate;
-3. drain deferred ISR callbacks;
+2. update the dynamic IDLE load gate, if `TLS_USE_IDLE` is enabled;
+3. drain deferred ISR callbacks, if `TLS_ISR` is enabled;
 4. compact or reorder PERIODIC storage when required;
 5. execute due PERIODIC callbacks;
 6. compact or reorder DELAYED storage when required;
 7. execute due DELAYED callbacks;
-8. enter AVR `SLEEP_MODE_IDLE` when the IDLE gate permits it;
+8. enter AVR `SLEEP_MODE_IDLE` if `TLS_USE_IDLE` is enabled and the IDLE gate permits it;
 9. fully drain POSTED callbacks;
 10. execute a bounded POLL pass.
+
+Disabled phases are omitted at compile time. On Generic, execution continues
+from DELAYED directly to POSTED, then POLL. Without IDLE, POSTED and POLL do
+not wait for a wake-up interrupt, so POLL may run more frequently.
 
 All scheduler-dispatched callbacks in one pass see the same cached timestamp in `tinyls::now`.
 
@@ -378,8 +399,9 @@ All scheduler-dispatched callbacks in one pass see the same cached timestamp in 
 void tinyls::init();
 ```
 
-Initializes cached time, selects AVR `SLEEP_MODE_IDLE`, and logically empties
-all enabled queues.
+Initializes cached time and logically empties all enabled queues. When
+`TLS_USE_IDLE` is enabled, it also selects the platform sleep mode
+(currently AVR `SLEEP_MODE_IDLE`). With IDLE disabled, no sleep setup is performed.
 
 Call it exactly once from `setup()`, after hardware initialization and before registering initial jobs.
 
@@ -556,6 +578,9 @@ Do not call `removePoll()` directly from inside a PARTED step.
 
 ## Deferred ISR callbacks
 
+Available only when `TLS_ISR == TLS_ENABLE` and the selected backend
+supports it (currently AVR). Generic has no `postISR()` declaration or buffer.
+
 Record a deferred request from a normal AVR hardware ISR:
 
 ```cpp
@@ -619,8 +644,8 @@ Connect a normally open push button between digital pin 2 and GND. This example 
 
 ### `postISR()` rules and behavior
 
-- call `postISR()` only from a normal AVR hardware ISR;
-- global interrupts must remain disabled for the duration of that ISR;
+- call `postISR()` only from a normal, non-nested AVR hardware ISR;
+- do not allow another ISR to interrupt a `postISR()` call and access the same TLS request buffer;
 - nested interrupts are not supported;
 - `ISR_NOBLOCK` handlers are not supported;
 - manually re-enabling interrupts inside the ISR is not supported;
@@ -631,20 +656,33 @@ Connect a normally open push button between digital pin 2 and GND. This example 
 - `postISR()` does not insert the callback into an ordinary scheduler queue;
 - the deferred callback runs later in main context and may use enabled main-context scheduler APIs.
 
+On classic AVR, normal ISR entry clears the global interrupt-enable bit.
+AVR Dx / AVRxt instead use CPUINT execution-level state to prevent another
+normal-priority handler from entering; `SREG.I` is not automatically cleared.
+The required property is non-nested access to the request buffer. Do not use
+`postISR()` concurrently from normal and high-priority handlers (LVL1), or from NMI.
+This platform distinction does not change the deferred-callback API.
+See the [Microchip AVR instruction-set manual, RETI notes](https://ww1.microchip.com/downloads/en/DeviceDoc/AVR-InstructionSet-Manual-DS40002198.pdf)
+and [AVR DB interrupt priority](https://onlinedocs.microchip.com/oxy/GUID-8FC17F92-806A-426E-8A7C-60D2F975DE7F-en-US-7/GUID-B51E7F4A-0EFE-4F1F-8EDF-AEEE5C273022.html).
+
 Do not call `postISR()` from normal main-context code. Use `every()`, `after()`, `post()`, or `poll()` instead.
 
 
 ## Compile-time subsystem selection
 
-The following ordinary scheduler subsystems are enabled by default:
+PERIODIC, DELAYED, POSTED, and POLL are enabled by default on both backends.
+`TLS_ISR` defaults to enabled on AVR and disabled on Generic. PARTED remains
+optional on both backends. `TLS_USE_IDLE` is independent of task-class selection.
 
-```cpp
-TLS_PERIODIC
-TLS_DELAYED
-TLS_POSTED
-TLS_POLL
-TLS_ISR
-```
+| Switch | AVR default | Generic default |
+| --- | --- | --- |
+| `TLS_PERIODIC`, `TLS_DELAYED`, `TLS_POSTED`, `TLS_POLL` | `TLS_ENABLE` | `TLS_ENABLE` |
+| `TLS_ISR` | `TLS_ENABLE` | `TLS_DISABLE` |
+| `TLS_USE_IDLE` | `TLS_ENABLE` | `TLS_DISABLE` |
+| `TLS_PARTED` | `TLS_DISABLE` | `TLS_DISABLE` |
+
+`TLS_ISR` controls only TLS deferred requests; disabling it does not disable
+hardware interrupts or ordinary `post()`. `TLS_POSTED` controls `post()` independently.
 
 PARTED is disabled by default:
 
@@ -661,7 +699,8 @@ TLS_DISABLE
 
 ### Disable all scheduler classes
 
-Use the following configuration to compile only the scheduler core:
+Use the following configuration to compile only the common scheduler core,
+without task classes or IDLE:
 
 ```cpp
 #define TLS_PERIODIC TLS_DISABLE
@@ -670,6 +709,7 @@ Use the following configuration to compile only the scheduler core:
 #define TLS_POLL     TLS_DISABLE
 #define TLS_ISR      TLS_DISABLE
 #define TLS_PARTED   TLS_DISABLE
+#define TLS_USE_IDLE TLS_DISABLE
 
 #include <MTW_TinyLoopScheduler.h>
 ```
@@ -685,7 +725,9 @@ A disabled ordinary subsystem contributes no:
 
 ### Enable one scheduler class
 
-Start from the all-disabled configuration and change only the required subsystem to `TLS_ENABLE`.
+Disable the other task classes and enable only the required subsystem.
+The examples below leave IDLE at its platform default; define
+`TLS_USE_IDLE TLS_DISABLE` separately if sleep is not wanted.
 
 PERIODIC only:
 
@@ -709,6 +751,9 @@ For another ordinary class, keep the other classes disabled and enable only one 
 #define TLS_ISR     TLS_ENABLE
 ```
 
+Enabling `TLS_ISR` is supported only on AVR. Explicitly enabling it on
+Generic produces a compile-time error.
+
 PARTED is not an independent queue class. It requires POLL:
 
 ```cpp
@@ -724,7 +769,8 @@ PARTED is not an independent queue class. It requires POLL:
 
 ### Approximate footprint by enabled class
 
-The following reference builds used:
+The following reference AVR builds used `TLS_USE_IDLE = TLS_ENABLE`
+(the AVR default). These figures do not describe Generic targets. They used:
 
 - Arduino Uno / ATmega328P at 16 MHz;
 - `TLS_MANUAL`;
@@ -801,6 +847,11 @@ The predefined profiles are intended for the following simultaneous active or pe
 | `TLS_DEF`  |       12 |       8 |    8 |      8 |            6 |
 | `TLS_MAX`  |       24 |      16 |   16 |     16 |           12 |
 
+The table describes recommended workload, not physical array sizes. In this
+version, each predefined physical queue has one additional usable slot above
+the listed recommendation. That slot is not reserved or protected; it gives
+headroom for bursts and PERIODIC/DELAYED tombstones.
+
 Choose the smallest profile that safely covers the maximum expected number of simultaneous active or pending callbacks in every enabled queue.
 
 
@@ -822,7 +873,10 @@ Example:
 #include <MTW_TinyLoopScheduler.h>
 ```
 
-Undefined manual limits default to the `TLS_DEF` configuration.
+Manual limits are physical capacities; no extra slot is added. Each limit is
+clamped to `2..255`, with a compiler warning when clamping occurs. Undefined
+manual limits use the `TLS_DEF` physical capacities: PERIODIC `13`, DELAYED `9`,
+POLL `9`, POSTED `9`, and ISR requests `7`.
 
 When using `TLS_MANUAL`, select values that cover the maximum expected simultaneous workload for each enabled queue.
 
@@ -872,6 +926,31 @@ The 32-bit maximum is constrained by signed-delta deadline comparison. Larger va
 
 For longer waits, use a shorter supported scheduler interval plus an application counter.
 
+## IDLE enable / disable
+
+`TLS_USE_IDLE` controls the complete TLS sleep subsystem. It defaults to
+`TLS_ENABLE` on AVR and `TLS_DISABLE` on Generic.
+
+To disable AVR sleep while keeping the ordinary task queues:
+
+```cpp
+#define TLS_USE_IDLE TLS_DISABLE
+#include <MTW_TinyLoopScheduler.h>
+```
+
+`TLS_ISR` can be disabled independently. Generic needs neither definition:
+both features are already disabled by default. Explicitly enabling either
+unsupported feature on Generic produces a compile-time error.
+
+With IDLE disabled, there is no sleep setup, hardware sleep instruction,
+`idle_prev_ms` storage/update, load-gate interval calculation, or IDLE skip-bit
+maintenance. The common `tinyls::now` snapshot and ordinary queue maintenance
+remain. POSTED and POLL execute without waiting for a wake-up interrupt.
+
+When AVR IDLE is enabled, call `tick()` with interrupts enabled and keep a
+working wake-up source, normally the Arduino core's millis timer. TLS does not
+configure a separate wake-up timer or replace the core's timekeeping.
+
 ## Dynamic IDLE selection
 
 Select the IDLE load threshold. `TLS_IDLE` selects only the threshold; it does not enable or disable IDLE:
@@ -895,6 +974,7 @@ Default:
 TLS_IDLE TLS_NORMAL
 ```
 
+The following load-gate behavior applies only when `TLS_USE_IDLE` is enabled.
 At the beginning of `tick()`, the scheduler measures the interval since the previous `tick()` entry using the low 16 bits of `millis()`.
 
 IDLE is skipped for the current pass when:
@@ -911,7 +991,8 @@ The 16-bit load-gate interval wraps every 65.536 seconds. This affects only the 
 ## Sleep mode guard
 
 `TLS_SLEEP_GUARD` controls whether the scheduler reaffirms
-`SLEEP_MODE_IDLE` immediately before every actual sleep entry.
+`SLEEP_MODE_IDLE` immediately before every actual sleep entry. It has no
+effect when `TLS_USE_IDLE` is disabled and does not enable sleep itself.
 
 The default configuration is:
 
@@ -1016,7 +1097,8 @@ TLS_PART_END()
 
 ### Recommended activation paths
 
-Register or trigger a PARTED callback through one of the scheduler classes:
+Register or trigger a PARTED callback through an enabled scheduler class.
+The `postISR()` activation path requires AVR support and `TLS_ISR` enabled:
 
 ```cpp
 tinyls::poll(partedFn);
@@ -1112,6 +1194,26 @@ A reference mixed pass executing one PERIODIC, DELAYED, POSTED, POLL, deferred I
 
 These figures describe scheduler overhead with minimal callbacks. Application callback execution time must be added separately.
 
+## Source structure
+
+The public include remains `<MTW_TinyLoopScheduler.h>`. The internal split keeps
+the existing procedural implementation and phase order; `.inc` fragments are
+included inside their original namespaces or functions, not compiled separately.
+
+| Path under `src/` | Purpose |
+| --- | --- |
+| `MTW_TinyLoopScheduler.h` | Public entry point and implementation assembly |
+| `mtw_ls/MTW_LS_Features.h` | Version, feature switches, and validation |
+| `mtw_ls/MTW_LS_Config.h` | Queue profiles, capacities, and period width |
+| `mtw_ls/MTW_LS_Public.h` | Public declarations |
+| `mtw_ls/MTW_LS_Parted.h` | Optional PARTED macros |
+| `mtw_ls/MTW_LS_Storage.inc` | Static scheduler state |
+| `mtw_ls/MTW_LS_Init.inc`, `mtw_ls/MTW_LS_API.inc` | Initialization and queue API implementations |
+| `mtw_ls/MTW_LS_Tick*.inc` | Timestamp, ISR, PERIODIC, DELAYED, IDLE, POSTED, and POLL phases |
+| `mtw_ls/MTW_LS_Platform.h`, `mtw_ls/MTW_LS_Critical.inc` | Backend selection and critical-section inclusion |
+| `mtw_ls/platforms/MTW_LS_Platform_AVR*` | AVR capabilities, critical sections, sleep setup, and sleep entry |
+| `mtw_ls/platforms/MTW_LS_Platform_Generic.h` | Portable capabilities with IDLE/ISR disabled |
+
 ## Multi-file sketches
 
 Exactly one translation unit must own the implementation and scheduler state.
@@ -1140,7 +1242,14 @@ TLS_POSTED
 TLS_POLL
 TLS_ISR
 TLS_PARTED
+TLS_USE_IDLE
+TLS_SLEEP_GUARD
 ```
+
+Use a shared configuration header or build flags for consistent settings.
+A `#define` in one `.cpp` does not configure other translation units.
+Keep the same `TLS_PERIOD` where implementation/configuration types are used.
+`TLS_DECL_ONLY` is the deliberate exception: define it only in declaration-only files.
 
 Every translation unit that defines a PARTED callback must enable PARTED, and the implementation-owning translation unit must also enable it.
 
@@ -1155,12 +1264,20 @@ Every translation unit that defines a PARTED callback must enable PARTED, and th
 - Do not call `tick()` from a PARTED step.
 - Keep callbacks short and non-blocking.
 - Avoid long `delay()` calls inside callbacks.
-- Use only `postISR()` from supported ISR context.
+- Generic: access TLS from one main execution context; no ISR, concurrent thread, or second-core calls.
+- Use only `postISR()` from supported AVR ISR context.
 - Do not call normal queue APIs directly from a hardware ISR.
 - Do not create endless POSTED repost cycles.
 - Do not call `removePoll()` directly from a PARTED step.
 - Reserve enough POLL capacity for all simultaneously active PARTED callbacks.
 - Do not write to `tinyls::now`.
+
+## Documentation
+
+- [API](docs/API.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [Platforms](docs/PLATFORMS.md)
+- [Changelog](CHANGELOG.md)
 
 ## Examples
 
@@ -1171,6 +1288,8 @@ After installation, open them through:
 ```text
 File → Examples → MTW TinyLoopScheduler
 ```
+
+Examples that use `postISR()` require the AVR backend.
 
 ## License
 
