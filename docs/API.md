@@ -1,6 +1,6 @@
 # MTW TinyLoopScheduler API
 
-This document describes the public API of MTW TinyLoopScheduler version `0.1.3`.
+This document describes the public API of MTW TinyLoopScheduler version `0.2.0`.
 
 The library is a header-only cooperative scheduler for AVR targets using an Arduino-compatible core.
 
