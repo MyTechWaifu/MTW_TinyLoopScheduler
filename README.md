@@ -325,7 +325,7 @@ To pin a fixed release version, use a Git tag:
 
 ```ini
 lib_deps =
-    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#v0.2.0
+    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#0.2.0
 ```
 
 The library uses the Arduino framework. The selected board automatically
