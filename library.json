@@ -35,10 +35,7 @@
   "frameworks": [
     "arduino"
   ],
-  "platforms": [
-    "atmelavr",
-    "atmelmegaavr"
-  ],
+  "platforms": "*",
   "headers": [
     "MTW_TinyLoopScheduler.h"
   ],
