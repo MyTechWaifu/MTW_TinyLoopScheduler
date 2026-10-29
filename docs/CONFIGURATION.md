@@ -19,7 +19,9 @@ Example:
 
 ## Default configuration
 
-If no configuration macros are defined, the library uses:
+The backend is selected automatically from the build target. The following
+configuration shows the AVR defaults; Generic changes `TLS_ISR` and
+`TLS_USE_IDLE` to `TLS_DISABLE`. Other defaults remain the same:
 
 ```cpp
 #define TLS_PERIODIC TLS_ENABLE
@@ -31,6 +33,7 @@ If no configuration macros are defined, the library uses:
 
 #define TLS_PROFILE  TLS_DEF
 #define TLS_PERIOD   32
+#define TLS_USE_IDLE TLS_ENABLE
 #define TLS_IDLE     TLS_NORMAL
 #define TLS_SLEEP_GUARD TLS_ENABLE
 ```
@@ -57,14 +60,13 @@ TLS_DISABLE
 
 ### Default state
 
-Enabled by default:
+Enabled by default on both backends:
 
 ```cpp
 TLS_PERIODIC
 TLS_DELAYED
 TLS_POSTED
 TLS_POLL
-TLS_ISR
 ```
 
 Disabled by default:
@@ -72,6 +74,11 @@ Disabled by default:
 ```cpp
 TLS_PARTED
 ```
+
+ISR is enabled by default on AVR and disabled on Generic. `TLS_ISR`
+controls only TLS requests and is independent of ordinary `post()` and
+the Arduino core hardware interrupts. Explicitly enabling `TLS_ISR` on
+Generic produces a compile-time error.
 
 ### Full kernel trimming
 
@@ -101,7 +108,8 @@ This is compile-time kernel trimming, not runtime deactivation.
 #include <MTW_TinyLoopScheduler.h>
 ```
 
-This configuration retains only the common scheduler core.
+This configuration disables all task classes. AVR IDLE remains enabled
+unless `TLS_USE_IDLE` is also defined as `TLS_DISABLE`.
 
 ### PERIODIC only
 
@@ -155,7 +163,7 @@ This configuration retains only the common scheduler core.
 #include <MTW_TinyLoopScheduler.h>
 ```
 
-### ISR only
+### ISR only (AVR backend)
 
 ```cpp
 #define TLS_PERIODIC TLS_DISABLE
@@ -232,7 +240,10 @@ The predefined profiles are documented by their recommended simultaneous active 
 
 Choose the smallest profile that safely covers the maximum expected workload in every enabled task class.
 
-The implementation may keep internal headroom beyond the documented recommended workload. That internal detail is not part of the public profile contract.
+In this version, each predefined physical queue capacity is one entry above
+the recommended workload in the table. This extra entry is ordinary usable
+capacity, not a reserved slot. It gives headroom for bursts and tombstones.
+The recommended workload remains the public sizing guidance.
 
 ## Manual queue configuration
 
@@ -262,7 +273,9 @@ TLS_MAX_ISR_REQUESTS
 
 Each value defines the corresponding queue limit directly.
 
-Undefined manual limits fall back to the default `TLS_DEF` configuration values.
+Manual values are direct physical capacities; no extra entry is added.
+Undefined manual limits use `TLS_DEF` physical capacities: PERIODIC `13`,
+DELAYED `9`, POLL `9`, POSTED `9`, and ISR requests `7`.
 
 ### Supported limit range
 
@@ -345,9 +358,24 @@ Any value other than `16` or `32` is replaced with `32`, and the compiler emits 
 
 ## Automatic dynamic IDLE
 
-Dynamic IDLE is automatic and is not enabled or disabled with a feature switch.
+`TLS_USE_IDLE` enables or disables the entire sleep subsystem. Its default is
+`TLS_ENABLE` on AVR and `TLS_DISABLE` on Generic. To disable it on AVR:
 
-The selectable setting controls only the load threshold:
+```cpp
+#define TLS_USE_IDLE TLS_DISABLE
+#include <MTW_TinyLoopScheduler.h>
+```
+
+With IDLE disabled, sleep setup/entry, `idle_prev_ms`, its updates, load-gate
+calculations, and IDLE skip-bit maintenance are absent. The common timestamp
+and ordinary queue processing remain. POLL may execute more frequently.
+Explicitly enabling unsupported IDLE on Generic produces a compile-time error.
+
+When AVR IDLE is enabled, interrupts and a working wake-up source must remain
+enabled; the Arduino core's millis timer normally provides that source.
+
+The following dynamic behavior applies only when IDLE is enabled.
+`TLS_IDLE` controls only the load threshold:
 
 ```cpp
 #define TLS_IDLE TLS_AGGRESSIVE
@@ -402,7 +430,8 @@ The compiler emits a warning.
 ## Sleep mode guard
 
 `TLS_SLEEP_GUARD` controls whether TinyLoopScheduler reaffirms
-`SLEEP_MODE_IDLE` immediately before every actual sleep entry.
+`SLEEP_MODE_IDLE` immediately before every actual sleep entry. It has no
+effect when `TLS_USE_IDLE` is disabled and cannot enable IDLE itself.
 
 Default:
 
@@ -461,7 +490,8 @@ An invalid value is replaced with the class default:
 - DELAYED -> `TLS_ENABLE`;
 - POSTED -> `TLS_ENABLE`;
 - POLL -> `TLS_ENABLE`;
-- ISR -> `TLS_ENABLE`;
+- ISR -> platform default (`TLS_ENABLE` on AVR, `TLS_DISABLE` on Generic);
+- `TLS_USE_IDLE` -> platform default (`TLS_ENABLE` on AVR, `TLS_DISABLE` on Generic);
 - PARTED -> `TLS_DISABLE`.
 
 The compiler emits a warning.
@@ -516,6 +546,7 @@ TLS_POSTED
 TLS_POLL
 TLS_ISR
 TLS_PARTED
+TLS_USE_IDLE
 TLS_SLEEP_GUARD
 ```
 
@@ -523,9 +554,15 @@ Every translation unit that defines a PARTED callback must enable PARTED.
 
 The implementation owner must also enable PARTED so the shared PARTED state is allocated.
 
+Settings should be supplied through a common configuration header or build
+flags. A define in one `.cpp` does not propagate to other translation units.
+`TLS_PROFILE` controls capacities; it is not chosen automatically from the platform.
+
 ## Configuration order
 
-Use this order at the beginning of the implementation-owning sketch:
+The following complete example explicitly enables AVR hardware features;
+use it on AVR. On Generic, omit `TLS_ISR` and `TLS_USE_IDLE` to keep their
+automatic disabled defaults. Define settings before the first include:
 
 ```cpp
 /*
@@ -549,8 +586,9 @@ Use this order at the beginning of the implementation-owning sketch:
 #define TLS_PERIOD 16
 
 /*
-  4. Select the automatic dynamic IDLE threshold.
+  4. Enable IDLE and select its dynamic load threshold (AVR).
 */
+#define TLS_USE_IDLE TLS_ENABLE
 #define TLS_IDLE TLS_NORMAL
 
 /*
