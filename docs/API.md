@@ -2,7 +2,10 @@
 
 This document describes the public API of MTW TinyLoopScheduler version `0.2.0`.
 
-The library is a header-only cooperative scheduler for AVR targets using an Arduino-compatible core.
+The library is a header-only cooperative scheduler for Arduino-compatible targets.
+AVR is selected automatically for `__AVR__`; other targets use Generic.
+Generic provides ordinary task queues and optional PARTED, with IDLE and ISR
+support disabled. See [platform details](PLATFORMS.md).
 
 Include it with:
 
@@ -72,6 +75,7 @@ Do not call `init()` from:
 - an ISR.
 
 Calling `init()` resets the logical contents of all enabled scheduler queues.
+Sleep-mode setup is performed only when `TLS_USE_IDLE` is enabled.
 
 ## `tinyls::tick()`
 
@@ -105,13 +109,16 @@ Do not call it from:
 The scheduler pass order is:
 
 1. update `tinyls::now`;
-2. update the dynamic IDLE gate;
-3. process deferred ISR callbacks;
+2. update the dynamic IDLE gate if `TLS_USE_IDLE` is enabled;
+3. process deferred ISR callbacks if `TLS_ISR` is enabled;
 4. process PERIODIC callbacks;
 5. process DELAYED callbacks;
-6. enter dynamic IDLE when the pass is eligible;
+6. enter dynamic IDLE if `TLS_USE_IDLE` is enabled and the pass is eligible;
 7. process POSTED callbacks;
 8. process POLL callbacks.
+
+Disabled phases are omitted. With IDLE disabled, POSTED and POLL do not
+wait for a wake-up interrupt; POLL may execute more frequently.
 
 ## `tinyls::now`
 
@@ -340,6 +347,9 @@ Do not call `removePoll()` directly from inside a PARTED step.
 
 ## Deferred ISR requests
 
+Available only with `TLS_ISR == TLS_ENABLE` on a supported backend
+(currently AVR). Generic has no `postISR()` API or request buffer.
+
 ### Defer a callback from a hardware ISR
 
 ```cpp
@@ -393,8 +403,8 @@ void loop()
 
 Rules:
 
-- call `postISR()` only from a normal AVR hardware ISR;
-- global interrupts must remain disabled during that ISR;
+- call `postISR()` only from a normal, non-nested AVR hardware ISR;
+- do not allow another ISR to interrupt a `postISR()` call and access the same TLS request buffer;
 - nested interrupts are not supported;
 - `ISR_NOBLOCK` handlers are not supported;
 - manually re-enabling interrupts inside the ISR is not supported;
@@ -405,6 +415,15 @@ Rules:
 - `postISR()` performs no duplicate scan;
 - `postISR()` does not insert the callback into an ordinary task queue;
 - the deferred callback may use enabled main-context scheduler APIs.
+
+On classic AVR, normal ISR entry clears the global interrupt-enable bit.
+AVR Dx / AVRxt instead use CPUINT execution-level state to prevent another
+normal-priority handler from entering; `SREG.I` is not automatically cleared.
+The required property is non-nested access to the request buffer. Do not use
+`postISR()` concurrently from normal and high-priority handlers (LVL1), or from NMI.
+This platform distinction does not change the deferred-callback API.
+See the [Microchip AVR instruction-set manual, RETI notes](https://ww1.microchip.com/downloads/en/DeviceDoc/AVR-InstructionSet-Manual-DS40002198.pdf)
+and [AVR DB interrupt priority](https://onlinedocs.microchip.com/oxy/GUID-8FC17F92-806A-426E-8A7C-60D2F975DE7F-en-US-7/GUID-B51E7F4A-0EFE-4F1F-8EDF-AEEE5C273022.html).
 
 Do not call `postISR()` from normal main-context code.
 
@@ -593,7 +612,10 @@ Public functions are available only when their corresponding task class is enabl
 | `TLS_ISR`      | `postISR()`                                     |
 | `TLS_PARTED`   | `TLS_PART_START`, `TLS_STEP`, transition macros |
 
-The ordinary task classes are enabled by default.
+PERIODIC, DELAYED, POSTED, and POLL are enabled by default. ISR is enabled
+by default on AVR and disabled on Generic. `TLS_USE_IDLE` independently
+controls sleep and uses the same platform defaults. `TLS_ISR` does not
+control normal `post()` or hardware interrupts of the Arduino core.
 
 PARTED is disabled by default.
 
@@ -629,6 +651,7 @@ TLS_POSTED
 TLS_POLL
 TLS_ISR
 TLS_PARTED
+TLS_USE_IDLE
 TLS_SLEEP_GUARD
 ```
 
@@ -638,7 +661,8 @@ The implementation-owning translation unit must also enable PARTED so that the s
 
 # General restrictions
 
-- AVR targets only;
+- Arduino-compatible target with `Arduino.h` and a working `millis()`;
+- Generic calls into TLS must come from one main context; no concurrent thread, second-core, or ISR access;
 - call `init()` once before registering initial jobs;
 - call `tick()` continuously from `loop()`;
 - do not call `tick()` from nested contexts;
