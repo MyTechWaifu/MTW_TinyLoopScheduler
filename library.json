@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
   "name": "mtw-tinyloopscheduler",
-  "version": "0.1.4",
-  "description": "A compact header-only cooperative scheduler for AVR Arduino-compatible boards with static memory, compile-time queue profiles, ISR deferral, polling, posted callbacks, delayed callbacks, periodic callbacks, PARTED execution, and optional idle sleep.",
+  "version": "0.2.0",
+  "description": "A compact header-only cooperative scheduler for Arduino-compatible targets with static memory, periodic, delayed, posted and polling callbacks, optional PARTED, and AVR IDLE/ISR support.",
   "keywords": [
     "arduino",
     "avr",
