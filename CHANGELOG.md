@@ -4,6 +4,15 @@ All notable changes to MTW TinyLoopScheduler are documented in this file.
 
 The project follows Semantic Versioning.
 
+## [0.2.1] - 2026-10-30
+
+### Fixed
+
+- Added the platform documentation referenced by the README.
+- Corrected fixed-version Git dependency instructions to match the release tag naming.
+- Updated API and configuration documentation for automatic AVR / Generic selection and independent IDLE / ISR switches.
+- Updated citation metadata and identified the common Zenodo DOI explicitly as the concept DOI for all versions.
+
 ## [0.2.0] - 2026-10-28
 
 ### Added
