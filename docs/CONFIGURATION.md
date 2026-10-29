@@ -1,6 +1,6 @@
 # MTW TinyLoopScheduler Configuration
 
-This document describes the compile-time configuration of MTW TinyLoopScheduler version `0.2.0`.
+This document describes the compile-time configuration of MTW TinyLoopScheduler version `0.2.1`.
 
 All configuration macros must be defined before the first inclusion of:
 
