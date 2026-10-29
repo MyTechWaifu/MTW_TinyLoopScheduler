@@ -4,6 +4,31 @@ All notable changes to MTW TinyLoopScheduler are documented in this file.
 
 The project follows Semantic Versioning.
 
+## [0.2.0] - 2026-10-28
+
+### Added
+
+- Internal `.h` / `.inc` source split with the same public include and procedural scheduler phases.
+- Automatic AVR / Generic backend selection from the build target.
+- Generic main-context support for Arduino-compatible targets, including STM32, RP2040/RP2350, and Renesas.
+- `TLS_USE_IDLE` to remove the entire sleep subsystem at compile time.
+- Compile-time errors for explicitly enabling unsupported IDLE or ISR support.
+
+### Changed
+
+- AVR keeps IDLE and ISR enabled by default; Generic defaults both to disabled.
+- Disabled IDLE also removes its timestamp storage, load heuristic, and skip-bit maintenance.
+- PlatformIO metadata now permits Generic platforms and includes the platform documentation.
+- Updated README, API, configuration, platform documentation, and current version metadata.
+
+### Compatibility
+
+- The public ordinary-task API, queue algorithms, and phase order are preserved.
+- Default AVR generated code was checked against the original implementation.
+- Existing Arduino example sketches and PlatformIO project sources/configurations are unchanged.
+- Without IDLE, POSTED/POLL do not wait for wake-up; POLL can execute more frequently.
+- Generic has no TLS sleep or postISR backend and requires a single main execution context.
+
 ## [0.1.4] - 2026-07-12
 
 ### Added
