@@ -1,4 +1,4 @@
-# MTW TinyLoopScheduler 0.2.0 platforms: AVR and Generic
+# MTW TinyLoopScheduler 0.2.1 platforms: AVR and Generic
 
 The public ordinary-task API and the existing examples are preserved.
 
