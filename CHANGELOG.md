@@ -4,6 +4,21 @@ All notable changes to MTW TinyLoopScheduler are documented in this file.
 
 The project follows Semantic Versioning.
 
+## [0.2.2] - 2026-11-05
+
+### Changed
+
+- Read the deferred ISR request count once inside the existing critical section.
+- Use pointer traversal for PERIODIC/DELAYED duplicate and removal searches.
+- Complete PARTED by its known active POLL index, preserving ordered compaction
+  and multi-translation-unit dispatch.
+
+### Added
+
+- DELAYED sorted-prefix cache as the sole implementation: one SRAM byte per
+  enabled DELAYED queue, full sorting after compaction, and invalidation on
+  half-range deltas.
+
 ## [0.2.1] - 2026-10-30
 
 ### Fixed
