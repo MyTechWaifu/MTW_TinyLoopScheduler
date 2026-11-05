@@ -196,8 +196,7 @@ void setup()
     /*
       Register the PARTED function in the POLL queue.
 
-      The first POLL invocation initializes the PARTED state
-      and executes step 0.
+      Registration selects step 0. The first POLL invocation executes it.
     */
     tinyls::poll(partedTask);
 }
