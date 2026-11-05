@@ -91,6 +91,8 @@ static uint8_t periodic_count = 0u;
 static DelayedJob delayed[TLS_MAX_DELAYED];
 static uint8_t delayed_order[TLS_MAX_DELAYED];
 static uint8_t delayed_count = 0u;
+// Length of the prefix that a repeated insertion-sort pass would leave intact.
+static uint8_t delayed_sorted_count = 0u;
 #endif
 
 #if TLS_POLL == TLS_ENABLE
@@ -124,4 +126,3 @@ static uint8_t state_mask = 0u;
 #if TLS_USE_IDLE == TLS_ENABLE
 static uint16_t idle_prev_ms = 0u;
 #endif
-
