@@ -13,7 +13,7 @@ The library is header-only, uses static compile-time storage, does not allocate 
 
 ## Status
 
-Current version: **0.2.1**.
+Current version: **0.2.2**.
 
 The platform backend is selected automatically from the target selected in
 Arduino IDE or PlatformIO. No platform selector is required in a sketch.
@@ -49,7 +49,7 @@ MTW TinyLoopScheduler supports AVR and Arduino-compatible 32-bit targets. The ta
 | classic megaAVR | **ATmega32U4** | Leonardo, Micro, Pro Micro |
 | classic megaAVR | **ATmega2560** | Mega 2560, Mega ADK, Mega 1280 |
 | megaAVR 0-series | **ATmega4808, ATmega4809** | ATmega4808/4809 boards, Nano Every, Uno WiFi Rev2 |
-| AVR Dx series | **AVR64DD32, AVR32DB32** | AVR Dx boards |
+| AVR Dx series | **AVR64DD32, AVR32DB32, AVR128DB32** | AVR Dx boards |
 | AVR-compatible / LGT8F family | **LGT8F328P** | Nano LGT8F328P |
 | Microchip / Atmel SAM | **SAM3X8E** | Arduino Due |
 | Renesas RA | **RA4M1** | Arduino Uno R4 Minima |
@@ -63,9 +63,9 @@ The following MCU and clock-frequency combinations have been verified on physica
 
 | Clock frequency | Hardware-tested microcontrollers                                                                                        |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| 16 MHz          | `ATmega328P`, `ATmega328PB`, `ATmega32U4`, `ATmega2560`, `ATmega4808`, `ATmega4809`, `ATmega88PA`, `ATmega8A`, `ATtiny85`, `ATtiny88`, `AVR64DD32`, `AVR32DB32`|
-| 20 MHz          | `ATmega328P`, `ATmega88PA`, `ATmega4808`, `ATmega4809`, `AVR64DD32`, `AVR32DB32`|
-| 24 MHz          | `AVR64DD32`, `AVR32DB32`|
+| 16 MHz          | `ATmega328P`, `ATmega328PB`, `ATmega32U4`, `ATmega2560`, `ATmega4808`, `ATmega4809`, `ATmega88PA`, `ATmega8A`, `ATtiny85`, `ATtiny88`, `AVR64DD32`, `AVR32DB32`, `AVR128DB32`|
+| 20 MHz          | `ATmega328P`, `ATmega88PA`, `ATmega4808`, `ATmega4809`, `AVR64DD32`, `AVR32DB32`, `AVR128DB32`|
+| 24 MHz          | `AVR64DD32`, `AVR32DB32`, `AVR128DB32`|
 | 32 MHz          | `LGT8F328P`|
 
 Only the combinations listed above have been explicitly tested. Other clock frequencies may work when supported by the selected microcontroller, clock source, fuse configuration, and Arduino core, but they are not currently included in the verified hardware matrix.
@@ -80,7 +80,7 @@ The following Arduino core and MCU combinations have been successfully compiled 
 | ATTinyCore                   | `ATtiny85`, `ATtiny88`                   |
 | MiniCore                     | `ATmega328P`, `ATmega88PA`, `ATmega8A`   |
 | MegaCoreX                     | `ATmega4808`, `ATmega4809`   |
-| DxCore                     | `AVR64DD32`, `AVR32DB32`   |
+| DxCore                     | `AVR64DD32`, `AVR32DB32`, `AVR128DB32`   |
 | Thinary Nano Every           | `ATmega4808`                             |
 | LGT8Fx                       | `LGT8F328P`                                  |
 
@@ -325,7 +325,7 @@ To pin a fixed release version, use a Git tag:
 
 ```ini
 lib_deps =
-    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#0.2.1
+    https://github.com/MyTechWaifu/MTW_TinyLoopScheduler.git#0.2.2
 ```
 
 The library uses the Arduino framework. The selected board automatically
@@ -767,48 +767,6 @@ PARTED is not an independent queue class. It requires POLL:
 #include <MTW_TinyLoopScheduler.h>
 ```
 
-### Approximate footprint by enabled class
-
-The following reference AVR builds used `TLS_USE_IDLE = TLS_ENABLE`
-(the AVR default). These figures do not describe Generic targets. They used:
-
-- Arduino Uno / ATmega328P at 16 MHz;
-- `TLS_MANUAL`;
-- queue limits set to `2`;
-- only `tinyls::init()` in `setup()`;
-- only `tinyls::tick()` in `loop()`;
-- all unlisted scheduler classes disabled.
-
-The figures are approximate complete build totals for the minimal benchmark sketch. They are not isolated object-file sizes and must not be added together.
-
-| Configuration                    | Approx. SRAM | Approx. Flash | Added over core |
-| -------------------------------- | -----------: | ------------: | --------------: |
-| Empty Arduino sketch             |        ~10 B |        ~445 B |               — |
-| Scheduler core, all classes off  |        ~15 B |        ~585 B |        baseline |
-| PERIODIC only                    |        ~40 B |       ~1210 B |  ~25 B / ~625 B |
-| DELAYED only                     |        ~35 B |       ~1070 B |  ~20 B / ~485 B |
-| POSTED only                      |        ~15 B |        ~615 B |   ~0 B /  ~30 B |
-| POLL only                        |        ~15 B |        ~635 B |   ~0 B /  ~50 B |
-| ISR only                         |        ~20 B |        ~660 B |   ~5 B /  ~75 B |
-| POLL + PARTED                    |        ~15 B |        ~685 B |   ~0 B / ~100 B |
-| All ordinary classes, PARTED off |        ~65 B |       ~1790 B |  ~50 B / ~1205 B |
-
-In the `Added over core` column, the first value is additional SRAM and the second value is additional Flash relative to the all-disabled scheduler core.
-
-`POLL + PARTED` adds approximately `~50 B` of Flash over the POLL-only benchmark in this minimal configuration.
-
-Actual size depends on:
-
-- AVR core version;
-- compiler and toolchain version;
-- link-time optimization;
-- selected queue profile;
-- `TLS_PERIOD`;
-- application code;
-- which API functions are actually referenced.
-
-AVR LTO may remove enabled storage or code that is provably unused. Use the Arduino compiler build report for the exact size of a real sketch.
-
 ## Queue profiles
 
 Select a profile before including the header:
@@ -1092,7 +1050,7 @@ TLS_PART_END()
 ```text
 0..247   user-defined steps
 248..254 reserved
-255      internal start/uninitialized state
+255      internal inactive/reset marker; registration selects step 0
 ```
 
 ### Recommended activation paths
@@ -1144,55 +1102,84 @@ Do not:
 
 ## Approximate memory usage
 
-Reference measurements in the source were produced for Arduino Uno / ATmega328P at 16 MHz with a minimal sketch containing only `tinyls::init()` and `tinyls::tick()`.
-
-Actual results depend on the AVR core, compiler, toolchain, LTO, enabled subsystems, sketch structure, and library revision.
+Reference builds for version 0.2.2 use ATmega328P at 16 MHz, Arduino AVR Boards 1.8.6,
+AVR GCC 7.3.0, `-Os` and LTO. The sketch contains only `tinyls::init()` in
+`setup()` and `tinyls::tick()` in `loop()`, with all ordinary subsystems enabled
+and the default AVR IDLE backend. Figures are complete minimal-sketch totals,
+including the linked Arduino core, rounded **up to a multiple of 5 bytes**.
+Built with the Arduino Uno platform recipes used by Arduino IDE.
+They are approximate planning references, not upper bounds for other builds.
 
 ### All ordinary subsystems enabled, PARTED disabled
 
-| Profile    | `TLS_PERIOD=32` SRAM | Flash   | `TLS_PERIOD=16` SRAM | Flash   |
-| ---------- | -------------------: | ------: | -------------------: | ------: |
-| `TLS_TINY` |                ~65 B | ~1790 B |                ~60 B | ~1800 B |
-| `TLS_MINI` |                ~85 B | ~1790 B |                ~75 B | ~1800 B |
-| `TLS_MID`  |               ~145 B | ~1790 B |               ~130 B | ~1800 B |
-| `TLS_DEF`  |               ~245 B | ~1790 B |               ~215 B | ~1800 B |
-| `TLS_MAX`  |               ~445 B | ~1790 B |               ~395 B | ~1800 B |
+| Profile | `TLS_PERIOD=32` SRAM | Flash | `TLS_PERIOD=16` SRAM | Flash |
+| --- | ---: | ---: | ---: | ---: |
+| `TLS_TINY` | ~65 B | ~1825 B | ~60 B | ~1850 B |
+| `TLS_MINI` | ~85 B | ~1825 B | ~80 B | ~1850 B |
+| `TLS_MID` | ~145 B | ~1825 B | ~130 B | ~1850 B |
+| `TLS_DEF` | ~245 B | ~1825 B | ~220 B | ~1850 B |
+| `TLS_MAX` | ~445 B | ~1825 B | ~395 B | ~1850 B |
 
 ### All ordinary subsystems enabled, PARTED enabled
 
-| Profile    | `TLS_PERIOD=32` SRAM | Flash   | `TLS_PERIOD=16` SRAM | Flash   |
-| ---------- | -------------------: | ------: | -------------------: | ------: |
-| `TLS_TINY` |                ~65 B | ~1840 B |                ~60 B | ~1870 B |
-| `TLS_MINI` |                ~85 B | ~1840 B |                ~80 B | ~1870 B |
-| `TLS_MID`  |               ~145 B | ~1840 B |               ~130 B | ~1870 B |
-| `TLS_DEF`  |               ~245 B | ~1840 B |               ~220 B | ~1870 B |
-| `TLS_MAX`  |               ~445 B | ~1840 B |               ~395 B | ~1870 B |
+| Profile | `TLS_PERIOD=32` SRAM | Flash | `TLS_PERIOD=16` SRAM | Flash |
+| --- | ---: | ---: | ---: | ---: |
+| `TLS_TINY` | ~65 B | ~1885 B | ~60 B | ~1885 B |
+| `TLS_MINI` | ~85 B | ~1885 B | ~80 B | ~1885 B |
+| `TLS_MID` | ~145 B | ~1885 B | ~130 B | ~1885 B |
+| `TLS_DEF` | ~245 B | ~1885 B | ~220 B | ~1885 B |
+| `TLS_MAX` | ~445 B | ~1885 B | ~395 B | ~1885 B |
 
-Use the Arduino compiler build report for the exact result of a real sketch.
+The always-present DELAYED ordering cache is included in these figures. It uses
+one fixed SRAM byte for the entire enabled DELAYED queue, not one per job.
+PARTED is enabled by its switch in the second table, but the minimal sketch
+registers no PARTED callback: LTO can remove unused state or code. A real PARTED
+application must reserve its per-POLL-slot state as well. Callback data, stack,
+Serial buffers and other application features are not budgeted by these tables.
+Actual results depend on the core, compiler, enabled features and application.
+Use the compiler build report for the size of the real sketch.
 
 ## Approximate CPU cost
 
-Reference measurements were produced on Arduino Uno / ATmega328P at 16 MHz using Timer1 with prescaler 1.
+Reference instruction counts for version 0.2.2 use the ATmega328P model in
+simavr, Arduino AVR Boards 1.8.6, AVR GCC 7.3.0, `-Os` and LTO. All ordinary subsystems and
+PARTED are enabled, `TLS_PERIOD=32`, with manual queue capacities of 25. IDLE,
+timer activity and background interrupts are suppressed during measurement;
+the real Arduino `millis()` function reads a stationary timer counter. The
+counts therefore exclude sleeping and background-ISR time. Measurement-marker
+overhead is removed and calibrated. Values are rounded **up to multiples of
+5 CPU cycles**. They are illustrative costs, not worst-case timing guarantees.
 
-Approximate scheduler costs:
+| Operation | Approximate cost |
+| --- | ---: |
+| Empty `tick()` | ~145 cycles |
+| Waiting `tick()`: 4 PERIODIC + 4 DELAYED jobs | ~215 cycles |
+| Minimal direct callback call | ~10 cycles |
+| Active POLL callback | ~50 cycles/job |
+| Queued POSTED callback | ~30 cycles/job |
+| Deferred ISR callback (foreground) | ~35–40 cycles/job |
+| Active PARTED step, holding its state | ~60 cycles/job |
 
-| Operation                                       | Approximate cost   |
-| ----------------------------------------------- | -----------------: |
-| Core-only empty `tick()`                        |         ~40 cycles |
-| All ordinary subsystems enabled, empty `tick()` |        ~105 cycles |
-| Minimal direct callback                         |         ~20 cycles |
-| Active POLL callback                            |     ~50 cycles/job |
-| Queued POSTED callback                          |     ~30 cycles/job |
-| Deferred ISR request                            | ~45 cycles/request |
-| Active PARTED step                              | ~70–75 cycles/step |
+Per-job values are the observed growth over an empty tick for 1–8 minimal test
+callbacks. PARTED uses one-NOP steps without a transition; ordinary callbacks
+also perform minimal work. These rows include dispatch of that minimal callback.
+Application work must be budgeted separately. ISR here means deferred callbacks
+executed in the foreground, not the hardware interrupt handler or UART ISR.
 
-A reference mixed pass executing one PERIODIC, DELAYED, POSTED, POLL, deferred ISR, and PARTED callback required approximately:
+A mixed pass with one PERIODIC, DELAYED, POSTED, ordinary POLL, deferred ISR and
+PARTED callback is approximately **~505 cycles**
+(**~35 us** at 16 MHz).
 
-```text
-535 cycles ≈ 33 µs at 16 MHz
-```
+A new job appended after eight sorted DELAYED records takes approximately
+~215 cycles for the measured DELAYED phase; inserting it
+at the beginning takes approximately ~565 cycles. These
+are phase totals, not per-job dispatch costs. Very short queues can become
+slower despite the cache.
 
-These figures describe scheduler overhead with minimal callbacks. Application callback execution time must be added separately.
+Waiting timing queues inspect their first deadline in constant time. Cached
+late additions can skip the old prefix; compaction and invalidated prefixes use
+the full sort. Full insertion-sort work remains linear for ordered input and
+quadratic in the reverse-ordered case.
 
 ## Source structure
 
