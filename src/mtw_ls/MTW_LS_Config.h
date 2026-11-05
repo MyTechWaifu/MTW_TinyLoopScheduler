@@ -201,140 +201,96 @@
 
 /*
  --------------------------------------------------------------------------
- Reference memory usage and build sizes
+ Approximate memory usage
  --------------------------------------------------------------------------
 */
 
 /*
- MTW TinyLoopScheduler uses static compile-time storage only. TLS_PROFILE
- selects physical capacities for ordinary queues. TLS_PERIODIC, TLS_DELAYED,
- TLS_POSTED, TLS_POLL, and TLS_ISR select which ordinary subsystems are
- compiled. TLS_PARTED optionally adds a per-POLL-slot state array and shared
- active-slot state. A disabled ordinary subsystem contributes no queue array,
- queue counter, public API implementation, initialization code, or tick()
- phase.
+ Version 0.2.2 reference: ATmega328P, 16 MHz, Arduino AVR Boards 1.8.6, AVR GCC 7.3.0,
+ -Os and LTO; init() in setup(), tick() in loop(), ordinary queues and default
+ AVR IDLE enabled. Figures include the linked core and are rounded upward to
+ multiples of 5 bytes. They are minimal-sketch planning references, not portable
+ upper bounds. P32/P16 select TLS_PERIOD=32/16.
 
- Reference measurements below were produced for Arduino Uno / ATmega328P at
- 16 MHz. The benchmark sketch contained only tinyls::init() in setup() and
- tinyls::tick() in loop(). The listed SRAM and Flash values are approximate
- reference figures intended for rough capacity planning, not exact guarantees.
- Actual build results may vary slightly with the Arduino AVR core, compiler and
- toolchain version, LTO, build options, sketch structure, and later library
- revisions. Use the compiler build report for the exact size of a particular
- project.
-
- Minimal profile builds with all ordinary queue subsystems enabled:
-
-   Profile    P32 / PARTED off   P16 / PARTED off
+   Profile    P32 / PARTED off    P16 / PARTED off
               SRAM    Flash       SRAM    Flash
-   TLS_TINY   ~65 B   ~1790 B      ~60 B   ~1800 B
-   TLS_MINI   ~85 B   ~1790 B      ~75 B   ~1800 B
-   TLS_MID   ~145 B   ~1790 B     ~130 B   ~1800 B
-   TLS_DEF   ~245 B   ~1790 B     ~215 B   ~1800 B
-   TLS_MAX   ~445 B   ~1790 B     ~395 B   ~1800 B
+   TLS_TINY  ~ 65 B   ~1825 B     ~ 60 B   ~1850 B
+   TLS_MINI  ~ 85 B   ~1825 B     ~ 80 B   ~1850 B
+   TLS_MID   ~145 B   ~1825 B     ~130 B   ~1850 B
+   TLS_DEF   ~245 B   ~1825 B     ~220 B   ~1850 B
+   TLS_MAX   ~445 B   ~1825 B     ~395 B   ~1850 B
 
-   Profile    P32 / PARTED on    P16 / PARTED on
+   Profile    P32 / PARTED on     P16 / PARTED on
               SRAM    Flash       SRAM    Flash
-   TLS_TINY   ~65 B   ~1840 B      ~60 B   ~1870 B
-   TLS_MINI   ~85 B   ~1840 B      ~80 B   ~1870 B
-   TLS_MID   ~145 B   ~1840 B     ~130 B   ~1870 B
-   TLS_DEF   ~245 B   ~1840 B     ~220 B   ~1870 B
-   TLS_MAX   ~445 B   ~1840 B     ~395 B   ~1870 B
+   TLS_TINY  ~ 65 B   ~1885 B     ~ 60 B   ~1885 B
+   TLS_MINI  ~ 85 B   ~1885 B     ~ 80 B   ~1885 B
+   TLS_MID   ~145 B   ~1885 B     ~130 B   ~1885 B
+   TLS_DEF   ~245 B   ~1885 B     ~220 B   ~1885 B
+   TLS_MAX   ~445 B   ~1885 B     ~395 B   ~1885 B
 
- P32 and P16 mean TLS_PERIOD=32 and TLS_PERIOD=16. Profile capacity changes
- SRAM but normally does not change Flash because the same queue algorithms are
- compiled for every capacity.
+ The DELAYED prefix cache contributes one fixed SRAM byte for the whole queue.
+ It has no setting and is included above. Disabling DELAYED removes its cache.
+ PARTED-on builds above register no PARTED function; LTO can remove unused state.
+ Actual PARTED applications must allow for the per-slot state array and active
+ slot. Application data, Serial buffers and stack require separate budgets.
 
  Approximate SRAM planning cost per physical queue slot:
 
    PERIODIC, TLS_PERIOD=32       ~15 B
    PERIODIC, TLS_PERIOD=16       ~10 B
-   DELAYED                       ~10 B
-   POLL, PARTED disabled          ~5 B
-   POLL, PARTED enabled           ~5 B
-   POSTED                         ~5 B
-   ISR request                    ~5 B
+   DELAYED                      ~10 B
+   POLL, PARTED disabled         ~5 B
+   POLL, PARTED enabled          ~5 B
+   POSTED                        ~5 B
+   ISR request                   ~5 B
 
- These per-slot values are rough planning estimates intended to show the
- relative SRAM cost of each queue type. PERIODIC and DELAYED include their
- order-table entry. Each enabled queue also has a small fixed counter/state
- cost. PARTED adds one state byte per physical POLL slot and a small fixed
- active-slot state. Actual values may vary slightly with the compiler, ABI,
- build configuration, and later library revisions. Use the compiler build
- report for the exact SRAM consumption of a particular project.
-
- Minimal feature-stripping builds with TLS_MANUAL capacities set to 2:
-
-   Configuration                         SRAM     Flash
-   Empty Arduino sketch                  ~10 B     ~445 B
-   Scheduler core, all classes disabled  ~15 B     ~585 B
-   PERIODIC only                         ~40 B    ~1210 B
-   DELAYED only                          ~35 B    ~1070 B
-   POSTED only                           ~15 B     ~615 B
-   POLL only                             ~15 B     ~635 B
-   ISR only                              ~20 B     ~660 B
-   POLL + PARTED                         ~15 B     ~685 B
-   All ordinary subsystems, PARTED off      ~65 B    ~1790 B
-
- These are approximate minimal init()/tick() builds. AVR LTO may remove enabled
- queue storage or API code that is provably unused. Class-only Flash sizes are
- complete build totals and must not be added together. Compile the real sketch
- to obtain final SRAM and Flash usage.
+ Slot estimates are rounded planning values, not structure sizes. Timing queues
+ include their order-table entry. Fixed queue counters, cached time, state and
+ the DELAYED prefix byte are separate. PARTED adds state per physical POLL slot.
+ Compiler, core, configuration and application reachability affect the result;
+ use the real sketch build report for its actual SRAM and Flash usage.
 */
 
 /*
  --------------------------------------------------------------------------
- Reference CPU performance
+ Approximate CPU cost
  --------------------------------------------------------------------------
 */
 
 /*
- Reference CPU measurements were produced on Arduino Uno / ATmega328P at
- 16 MHz using Timer1 with prescaler 1. One timer count equals one CPU cycle.
+ Version 0.2.2 reference: simavr ATmega328P, 16 MHz, Arduino AVR Boards 1.8.6,
+ AVR GCC 7.3.0, -Os and LTO, all ordinary queues plus PARTED, TLS_PERIOD=32,
+ manual capacities 25. IDLE and background/timer activity are suppressed; the
+ real Arduino millis() reads a stationary timer. Marker overhead is calibrated
+ and excluded. Estimates are rounded upward to multiples of 5 CPU cycles;
+ they are not worst-case guarantees or measurements on a physical board.
 
- Every scenario was sampled 32 times. Timer measurement overhead was removed.
- AVR IDLE sleep was explicitly suppressed during measured intervals. The listed
- cycle counts are approximate reference values intended to show the expected
- order of magnitude and relative scheduler cost, not exact guarantees. Results
- may vary slightly with the compiler and toolchain version, Arduino AVR core,
- LTO, enabled subsystems, queue capacities, application code layout, benchmark
- conditions, and later library revisions.
+ Basic cost:
 
- Basic scheduler cost:
+   Empty tick                         ~145 cycles
+   Waiting tick, 4 PERIODIC+4 DELAYED  ~215 cycles
+   Minimal direct callback             ~10 cycles
 
-   Core-only empty tick                         ~40 cycles
-   All ordinary subsystems enabled, empty tick        ~105 cycles
-   Minimal direct callback                      ~20 cycles
+ Approximate tick growth per active/queued minimal callback (1..8 jobs):
 
- Approximate tick cost growth with a minimal callback:
+   Active POLL callback                       ~50 cycles/job
+   Queued POSTED callback                     ~30 cycles/job
+   Deferred ISR callback (foreground)         ~35..40 cycles/job
+   Active PARTED step, holding its state      ~60 cycles/job
 
-   POLL                                         ~50 cycles per active job
-   POSTED                                       ~30 cycles per queued job
-   Deferred ISR                                 ~45 cycles per request
-   PARTED                                       ~70..75 cycles per active step
+ PARTED reference steps hold their state and perform one NOP. Per-job values
+ include minimal callback dispatch. Budget actual application work separately.
+ Deferred ISR means foreground execution, not the hardware ISR or UART handler.
 
- Sorted timing queues inspect only the earliest deadline. When that deadline
- is not due, the steady PERIODIC or DELAYED pass has O(1) cost for the tested
- range of 1..8 waiting jobs.
+ One mixed pass with PERIODIC, DELAYED, POSTED, ordinary POLL, deferred ISR and
+ PARTED is about ~505 cycles, or ~35 us at 16 MHz.
+ A DELAYED phase appending after 8 sorted records is about
+ ~215 cycles; inserting first is about ~565 cycles.
+ These are phase totals. Very short DELAYED queues can be slower with the cache.
 
- DELAYED tombstone compaction is approximately:
-
-   ~25 + N * ~20 cycles
-
- PERIODIC and DELAYED deadline rebuilds use insertion sort:
-
-   already ordered input                        O(N)
-   reverse-ordered input                        O(N^2)
-
- With eight reverse-ordered timing jobs, the measured complete rebuild tick
- remained approximately 0.11 ms on a 16 MHz ATmega328P.
-
- A mixed tick executing one PERIODIC, DELAYED, POSTED, POLL, deferred ISR,
- and PARTED callback required about 535 cycles, or about 33 us.
-
- These figures describe scheduler overhead with minimal test callbacks.
- Real callback execution time must be added separately. See
- docs/PERFORMANCE.md for the benchmark methodology and complete results.
+ Waiting timing queues inspect the first deadline in constant time. Appending
+ to a usable sorted prefix skips its old entries. Compaction or invalidation
+ uses full insertion sort: O(N) for ordered input, O(N^2) in the reverse case.
 */
 
 /*
