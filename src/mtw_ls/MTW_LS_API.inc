@@ -23,8 +23,9 @@ uint8_t every(Fn fn, uint32_t period_ms)
         return 0u;
     }
 
-    for (uint8_t i = 0u; i < kernel::periodic_count; ++i) {
-        if (kernel::periodic[i].fn == fn) {
+    kernel::PeriodicJob *job = kernel::periodic;
+    for (uint8_t i = 0u; i < kernel::periodic_count; ++i, ++job) {
+        if (job->fn == fn) {
             return 0u;
         }
     }
@@ -67,8 +68,9 @@ uint8_t after(Fn fn, uint32_t delay_ms)
         return 0u;
     }
 
-    for (uint8_t i = 0u; i < kernel::delayed_count; ++i) {
-        if (kernel::delayed[i].fn == fn) {
+    kernel::DelayedJob *job = kernel::delayed;
+    for (uint8_t i = 0u; i < kernel::delayed_count; ++i, ++job) {
+        if (job->fn == fn) {
             return 0u;
         }
     }
@@ -131,7 +133,7 @@ uint8_t post(Fn fn)
  Append one persistent POLL callback.
 
  Duplicate function pointers are rejected within POLL. When PARTED is enabled,
- the corresponding poll_part[] slot is initialized to the internal start state
+ the corresponding poll_part[] slot is initialized to step 0
  even when the callback is an ordinary non-PARTED POLL function.
 */
 uint8_t poll(Fn fn)
@@ -153,7 +155,7 @@ uint8_t poll(Fn fn)
     kernel::poll_jobs[kernel::poll_count] = fn;
 
 #if TLS_PARTED == TLS_ENABLE
-    kernel::poll_part[kernel::poll_count] = TLS_PART_STATE_START;
+    kernel::poll_part[kernel::poll_count] = 0u;
 #endif
 
     ++kernel::poll_count;
@@ -216,9 +218,10 @@ uint8_t removeEvery(Fn fn)
         return 0u;
     }
 
-    for (uint8_t i = 0u; i < kernel::periodic_count; ++i) {
-        if (kernel::periodic[i].fn == fn) {
-            kernel::periodic[i].fn = 0;
+    kernel::PeriodicJob *job = kernel::periodic;
+    for (uint8_t i = 0u; i < kernel::periodic_count; ++i, ++job) {
+        if (job->fn == fn) {
+            job->fn = 0;
             kernel::state_mask |=
                 (kernel::STATE_COMPACT_PERIODIC |
                  kernel::STATE_REBUILD_PERIODIC);
@@ -249,9 +252,10 @@ uint8_t removeAfter(Fn fn)
         return 0u;
     }
 
-    for (uint8_t i = 0u; i < kernel::delayed_count; ++i) {
-        if (kernel::delayed[i].fn == fn) {
-            kernel::delayed[i].fn = 0;
+    kernel::DelayedJob *job = kernel::delayed;
+    for (uint8_t i = 0u; i < kernel::delayed_count; ++i, ++job) {
+        if (job->fn == fn) {
+            job->fn = 0;
             kernel::state_mask |=
                 (kernel::STATE_COMPACT_DELAYED |
                  kernel::STATE_REBUILD_DELAYED);
@@ -266,6 +270,28 @@ uint8_t removeAfter(Fn fn)
 
 
 #if TLS_POLL == TLS_ENABLE
+
+#if TLS_PARTED == TLS_ENABLE
+/*
+ Internal PARTED completion. The caller already knows its active POLL index.
+ Preserve the same ordered compaction as removePoll(), without searching again.
+*/
+void kernel::erasePollAt(uint8_t index)
+{
+    for (uint8_t j = index;
+         (uint8_t)(j + 1u) < kernel::poll_count;
+         ++j) {
+
+        kernel::poll_jobs[j] =
+            kernel::poll_jobs[(uint8_t)(j + 1u)];
+
+        kernel::poll_part[j] =
+            kernel::poll_part[(uint8_t)(j + 1u)];
+    }
+
+    --kernel::poll_count;
+}
+#endif
 
 /*
  Remove one POLL callback and compact the array immediately.
@@ -310,5 +336,3 @@ uint8_t removePoll(Fn fn)
 }
 
 #endif // TLS_POLL
-
-
