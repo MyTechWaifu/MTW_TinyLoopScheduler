@@ -1,6 +1,6 @@
 # MTW TinyLoopScheduler Configuration
 
-This document describes the compile-time configuration of MTW TinyLoopScheduler version `0.2.1`.
+This document describes the compile-time configuration of MTW TinyLoopScheduler version `0.2.2`.
 
 All configuration macros must be defined before the first inclusion of:
 
@@ -469,11 +469,8 @@ Reserved states:
 248..254
 ```
 
-Internal start state:
-
-```text
-255
-```
+Internal inactive/reset marker: `255`. Registration selects step `0` immediately;
+user step 0 still executes only on the POLL invocation.
 
 ## Invalid task-class selector values
 
