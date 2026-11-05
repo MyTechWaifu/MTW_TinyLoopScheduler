@@ -11,7 +11,7 @@
 
  Activation paths:
    - tinyls::poll(fn) may register the PARTED callback directly; its first
-     POLL invocation initializes the state and executes step 0;
+     POLL invocation executes the already-selected step 0;
    - a direct application call, PERIODIC callback, DELAYED callback, POSTED
      callback, or callback deferred through postISR() invokes the PARTED
      function outside POLL; that invocation only attempts tinyls::poll(fn)
@@ -45,7 +45,7 @@
 
  Step numbers 0..247 are available to application code. TLS_STEP(N) requires a
  compile-time constant. Values 248..254 are reserved, and 255 is the internal
- start/uninitialized state. Source order does not define execution order; the
+ inactive/reset marker. Source order does not define execution order; the
  stored step number selects the matching case.
 
  If a matched TLS_STEP block reaches its end without TLS_NEXT(), TLS_NEXT(N),
@@ -102,7 +102,7 @@
 
  Outside POLL, this macro attempts poll(fn) and returns without executing a
  step; the poll() result is intentionally not exposed. Inside POLL, it binds
- the current POLL slot, converts the internal start state to step 0, and opens
+ the current POLL slot, reads its selected step, and opens
  the step-selection switch.
 */
 #define TLS_PART_START(fn)                                                       \
@@ -121,11 +121,6 @@
         }                                                                        \
                                                                                  \
         tls_part_index_local = tinyls::kernel::poll_slot;                        \
-                                                                                 \
-        if (tinyls::kernel::poll_part[tls_part_index_local] ==                   \
-            TLS_PART_STATE_START) {                                              \
-            tinyls::kernel::poll_part[tls_part_index_local] = 0u;                \
-        }                                                                        \
                                                                                  \
         uint8_t tls_part_matched_local = 0u;                                     \
         switch (tinyls::kernel::poll_part[tls_part_index_local])
@@ -159,7 +154,7 @@
         if (!tls_part_matched_local) {                                           \
             tinyls::kernel::poll_part[tls_part_index_local] =                    \
                 TLS_PART_STATE_START;                                            \
-            tinyls::removePoll(tls_part_fn_local);                               \
+            tinyls::kernel::erasePollAt(tls_part_index_local);                  \
         }                                                                        \
         return;                                                                  \
     } while (0)
@@ -172,7 +167,7 @@
         } else {                                                                 \
             tinyls::kernel::poll_part[tls_part_index_local] =                    \
                 TLS_PART_STATE_START;                                            \
-            tinyls::removePoll(tls_part_fn_local);                               \
+            tinyls::kernel::erasePollAt(tls_part_index_local);                  \
         }                                                                        \
         return;                                                                  \
     } while (0)
@@ -230,7 +225,7 @@
     do {                                                                         \
         tinyls::kernel::poll_part[tls_part_index_local] =                        \
             TLS_PART_STATE_START;                                                \
-        tinyls::removePoll(tls_part_fn_local);                                   \
+        tinyls::kernel::erasePollAt(tls_part_index_local);                      \
         return;                                                                  \
     } while (0)
 
