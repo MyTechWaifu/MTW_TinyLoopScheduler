@@ -1,6 +1,6 @@
 # MTW TinyLoopScheduler API
 
-This document describes the public API of MTW TinyLoopScheduler version `0.2.1`.
+This document describes the public API of MTW TinyLoopScheduler version `0.2.2`.
 
 The library is a header-only cooperative scheduler for Arduino-compatible targets.
 AVR is selected automatically for `__AVR__`; other targets use Generic.
@@ -527,11 +527,8 @@ Reserved values:
 248..254
 ```
 
-Internal start state:
-
-```text
-255
-```
+Internal inactive/reset marker: `255`. Registration selects step `0` immediately;
+user step 0 still executes only on the POLL invocation.
 
 Step numbers must be compile-time constants.
 
