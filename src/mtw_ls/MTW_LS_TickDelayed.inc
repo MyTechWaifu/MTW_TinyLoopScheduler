@@ -43,7 +43,14 @@
          record indices changed.
         */
      
-        for (uint8_t i = 1u; i < kernel::delayed_count; ++i) {
+        // Compaction rebuilt physical indices, so its order must be fully sorted.
+        uint8_t sort_start = (kernel::state_mask & kernel::STATE_COMPACT_DELAYED)
+            ? 1u : kernel::delayed_sorted_count;
+        if (sort_start < 1u) {
+            sort_start = 1u;
+        }
+        bool cache_stable = true;
+        for (uint8_t i = sort_start; i < kernel::delayed_count; ++i) {
             uint8_t key = kernel::delayed_order[i];
             uint32_t key_deadline = kernel::delayed[key].deadline_ms;
             uint8_t j = i;
@@ -51,11 +58,17 @@
             while (j > 0u) {
                 uint8_t prev = kernel::delayed_order[(uint8_t)(j - 1u)];
 
-                if ((int32_t)(key_deadline -
-                      kernel::delayed[prev].deadline_ms) >= 0) {
+                uint32_t delta = key_deadline - kernel::delayed[prev].deadline_ms;
+                if ((int32_t)delta >= 0) {
                     break;
                 }
 
+                // At exactly half-range both signed differences are negative.
+                // Original insertion sort can change this order on a later pass;
+                // do not cache it as an immutable prefix.
+                if (delta == 0x80000000UL) {
+                    cache_stable = false;
+                }
                 kernel::delayed_order[j] = prev;
                 --j;
             }
@@ -63,6 +76,7 @@
             kernel::delayed_order[j] = key;
         }
 
+        kernel::delayed_sorted_count = cache_stable ? kernel::delayed_count : 0u;
         kernel::state_mask &= (uint8_t)~(kernel::STATE_COMPACT_DELAYED |
                                          kernel::STATE_REBUILD_DELAYED);
     }
@@ -119,4 +133,3 @@
     }
 
 #endif // TLS_DELAYED
-
