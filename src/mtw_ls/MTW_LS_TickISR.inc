@@ -24,7 +24,8 @@
             Fn fn;
             uint8_t state = kernel::enterCritical();
 
-            if (kernel::isr_request_count == 0u) {
+            uint8_t request_count = kernel::isr_request_count;
+            if (request_count == 0u) {
                 kernel::exitCritical(state);
                 break;
             }
@@ -34,8 +35,9 @@
              Interrupts remain disabled for only a few instructions, and the
              deferred callback runs in normal main context.
             */
-            --kernel::isr_request_count;
-            fn = kernel::isr_requests[kernel::isr_request_count];
+            uint8_t index = (uint8_t)(request_count - 1u);
+            kernel::isr_request_count = index;
+            fn = kernel::isr_requests[index];
 
             kernel::exitCritical(state);
 
@@ -44,4 +46,3 @@
     }
 
 #endif // TLS_ISR
-
