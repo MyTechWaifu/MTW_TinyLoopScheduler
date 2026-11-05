@@ -28,6 +28,7 @@
 #endif
 #if TLS_DELAYED == TLS_ENABLE
     kernel::delayed_count = 0u;
+    kernel::delayed_sorted_count = 0u;
 #endif
 #if TLS_POLL == TLS_ENABLE
     kernel::poll_count = 0u;
