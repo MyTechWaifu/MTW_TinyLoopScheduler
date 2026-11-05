@@ -6,8 +6,8 @@
 
 #define TLS_VERSION_MAJOR 0
 #define TLS_VERSION_MINOR 2
-#define TLS_VERSION_PATCH 1
-#define TLS_VERSION_STRING "0.2.1"
+#define TLS_VERSION_PATCH 2
+#define TLS_VERSION_STRING "0.2.2"
 
 /*
  --------------------------------------------------------------------------
@@ -177,11 +177,10 @@
 
    0..247   user-defined execution steps;
    248..254 reserved for future PARTED control states;
-   255      start/uninitialized state.
+   255      inactive/reset marker; newly registered slots start at step 0.
 
  Reserved values must not be selected by TLS_STEP() or by a constant
  TLS_NEXT(N).
 */
 #define TLS_PART_MAX_STEP    247u
 #define TLS_PART_STATE_START 255u
-
