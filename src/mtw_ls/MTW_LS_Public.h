@@ -247,9 +247,11 @@ enum {
 extern uint8_t poll_slot;
 extern uint8_t poll_part[];
 
+// Internal PARTED removal; index must be the active, valid POLL slot.
+void erasePollAt(uint8_t index);
+
 #endif
 
 } // namespace kernel
 
 } // namespace tinyls
-
